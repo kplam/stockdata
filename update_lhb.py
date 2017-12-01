@@ -1,0 +1,67 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+"""
+Created on 15:20:00 2017-11-22
+
+@author: kplam
+"""
+from kpfunc.spyder import spyder
+from kpfunc.getdata import localconn,serverconn
+from time import sleep
+from random import random
+import datetime
+import pandas as pd
+import json,re
+
+
+def get_lhblist(date,proxy):
+    url_sh="http://stock.jrj.com.cn/action/lhb/getHsTodaylhb.jspa?vname=list&date=%s&dateType=2&order=desc&sort=netvalue_value&psize=2000"%(date)
+    html_sh = spyder(url_sh,proxy=proxy).content.decode('utf-8')#[9:-3]
+    url_sz ="http://stock.jrj.com.cn/action/lhb/getHsTodaylhb.jspa?vname=list&date=%s&dateType=1&order=desc&sort=netvalue_value&psize=2000"%(date)
+    html_sz = spyder(url_sz,proxy=proxy).content.decode('utf-8')#[9:-3]
+    lhblist = list(set(re.findall('\d{6}',html_sh)+re.findall('\d{6}',html_sz)))
+    return lhblist
+
+def get_lhbdetail(code,date,proxy):
+    url = "http://stock.jrj.com.cn/action/lhb/getStockLhbDetatil.jspa?vname=detailInfo&stockcode=%s&date=%s"%(code,date)
+    html = spyder(url,proxy=proxy).content.decode('utf-8')
+    html = re.split("\;",html)
+    json_detail = html[0][15:]
+    j=1
+    while json_detail[-1] != "}":
+        json_detail = json_detail+html[j]
+        j=j+1
+    # else:
+    #     json_detail =  html[0][15:]
+    data = json.loads(json_detail)['data']
+    df_detail =pd.DataFrame()
+    for i in range(len(data)):
+        tmp_detail = pd.DataFrame(data[i][1],columns=['date', 'code', '买入金额', '卖出金额', '净买入金额', '净买入金额占总成交额', 'pl', '上榜原因', '买卖方向', '营业部代码', '营业部名称', '买入金额占总成交额', '卖出金额占总成交额', '上榜总成交额'])
+        df_detail = pd.concat((tmp_detail,df_detail))
+    return df_detail
+
+# sql_date = "select distinct `date` from `indexdb` WHERE `date`>='2017-01-01' ORDER BY `date` ASC "
+# list_date = pd.read_sql(sql_date,localconn())['date'].values
+today =datetime.date.today()
+list_date=[today]
+errorlist =[]
+for date in list_date:
+    df_lhbdetail = pd.DataFrame()
+    try:
+        lhb_list = get_lhblist(str(date),proxy=0)
+        print(str(date),len(lhb_list))
+        if len(lhb_list) ==0:
+            errorlist.append((str(date),0))
+        for code in lhb_list:
+            print(str(date),code)
+            tmp_lhbdetail = get_lhbdetail(code,str(date),proxy=0)
+            # tmp_lhbdetail =tmp_lhbdetail.drop_duplicates()
+            df_lhbdetail = pd.concat((tmp_lhbdetail,df_lhbdetail))
+            sleep(random()/10+1)
+    except Exception as e:
+        print(str(date),e)
+        errorlist.append((str(date),code,e))
+    df_lhbdetail.to_csv('./data/lhb/'+str(date)+'.csv',encoding='utf-8')
+    df_lhbdetail.to_sql('lhb',localconn(),flavor='mysql',schema='stockdata',if_exists='append',index=True,chunksize=10000)
+df_error = pd.DataFrame(errorlist)
+df_error.to_csv('./data/lhb/error.csv')

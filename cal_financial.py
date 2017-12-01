@@ -10,6 +10,9 @@ import datetime
 
 class cal_financial:
     def __init__(self,conn = localconn()):
+        """
+        :param conn: set sql conn (localconn()/serverconn())
+        """
         self.conn = conn
         sql_reportdate = "select distinct `报表日期` from faresult ORDER BY `报表日期` DESC"
         self.list_reportdate = pd.read_sql(sql_reportdate, self.conn)
@@ -37,7 +40,6 @@ class cal_financial:
 
     def median(self,fWeight=0.8,iQuarter=12,fCompare=0.4):
         """
-
         :param fWeight: 权重衰减值，默认0.8
         :param iQuarter: 计算财务数量，默认最近12季
         :param fCompare: 加权对比值，权重值之和*fCompare,默认0.4

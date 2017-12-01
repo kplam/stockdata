@@ -29,7 +29,7 @@ def get_sina_daybar(stocklist,proxy):
             times_retry= 3
             while lastbar=="error!" and times_retry != 0:
                 lastbar = spyder(urlsina,proxy=proxy)
-                times_retry = times_retry - 1
+                times_retry -=1
             return_list = re.findall("\"(.*?)\"", lastbar.content.decode('gbk'))
             lastbar_sp =return_list[0].split(',')
             lastbar_sp.append(stocklist[i][2:])
@@ -99,32 +99,3 @@ for code in stocklist:
     conn.commit()
 print('Update Stock Status Done!', today)
 
-# =================== Amo Ranking ==================== #
-# df_stockdaybar=df_stockdaybar.sort_values(by=['amo'],ascending=False)
-# df_stockdaybar['AmoRank'] = pd.Series(np.arange(len(df_stockdaybar['date']))+1,index=df_stockdaybar.index)
-# dayline = df_stockdaybar[['code', 'date', 'AmoRank']]
-# try:
-#     print(date)
-#     dayline.to_sql('usefuldata', con=conn, flavor='mysql', if_exists='append', index=False, index_label='date',
-#                    dtype=None)
-# except Exception as e:
-#     print(date, e)
-#     errorList.append(("local", date, e))
-
-# for i in range(len(stocklist)):
-#     code = stocklist[i]
-#     sql2 ="SELECT * From `usefuldata` WHERE `code`='%s' ORDER BY `date` DESC LIMIT 2"%(code)
-#     df_araise = pd.read_sql(sql2,conn)
-#     if df_araise.empty != True:
-#         if len(df_araise['date'].values) == 1 :
-#             araise = np.NaN
-#         else:
-#             try:
-#                 araise = df_araise.get_value(0,'AmoRank') - df_araise.get_value(1,'AmoRank')
-#                 sql3 = "UPDATE `usefuldata` SET `ARaise` ='%s' WHERE `date` = '%s' AND `code` ='%s'"%(araise,str(df_araise.get_value(0,'date')),code)
-#                 cur = conn.cursor()
-#                 cur.execute(sql3)
-#                 conn.commit()
-#             except Exception as e:
-#                 print(e)
-#                 errorList.append(("Arasise:", code, e))

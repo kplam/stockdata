@@ -134,4 +134,4 @@ stocklist = get_stocklist_prefix("01","02",0)
 times_retry = 3
 while len(stocklist) != 0 and times_retry != 0:
     stocklist = get_shareholder_data(stocklist)
-    times_retry = times_retry - 1
+    times_retry -=1

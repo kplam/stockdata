@@ -60,4 +60,4 @@ stocklist = pd.read_sql(sql,localconn())
 times_retry = 10
 while len(stocklist)>0 and times_retry !=0:
     stocklist = update_embasedata(stocklist,"local",0)
-    times_retry = times_retry-1
+    times_retry -=1

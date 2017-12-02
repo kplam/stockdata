@@ -8,9 +8,11 @@ Created on Fri Nov 10 15:20:00 2017
 from kpfunc.getdata import localconn,serverconn
 from kpfunc.function import path
 from kpfunc.indicator import *
+from numpy import isnan
 import datetime
 import pandas as pd
 import numpy as np
+
 
 class calc:
     def __init__(self,conn='local',length=365):

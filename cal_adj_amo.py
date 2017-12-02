@@ -204,7 +204,7 @@ class calc:
         df_data = df_data.reset_index(drop=True)
         result = []
         df_list = calc.adjfactor(self)
-        taresult = calc.tamodel(self)
+        taresultlist = calc.tamodel(self)
         print("正在按成交额进行排序...")
         for i in range(len(df_data)):
             code = df_data.get_value(i, 'code')
@@ -219,7 +219,7 @@ class calc:
             else:
                 ARaise = np.nan
             percentage = df_list[df_list['code']==code]['percentage'].values[0]
-            taresult = '1' if code in taresult else '0'
+            taresult = '1' if code in taresultlist else '0'
             result.append([code, date, fAmorank, ARaise,percentage,taresult])
         result=pd.DataFrame(result,columns=['code','date','AmoRank','ARaise','precentage','taresult'])
         print("正在将成交量信息写入数据库")

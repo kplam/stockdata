@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: 2017-12-01 14:23:17
+-- Generation Time: 2017-12-03 11:46:09
 -- 服务器版本： 5.7.19
 -- PHP Version: 7.0.23
 
@@ -233,6 +233,66 @@ PARTITION p15 VALUES LESS THAN (2016) ENGINE=InnoDB,
 PARTITION p16 VALUES LESS THAN (2017) ENGINE=InnoDB,
 PARTITION p0000 VALUES LESS THAN MAXVALUE ENGINE=InnoDB
 );
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `dayline_tmp`
+--
+
+DROP TABLE IF EXISTS `dayline_tmp`;
+CREATE TABLE IF NOT EXISTS `dayline_tmp` (
+  `code` varchar(30) NOT NULL,
+  `date` date NOT NULL DEFAULT '1990-01-01',
+  `adjfactor` float DEFAULT '1',
+  `adjcump` float DEFAULT '1',
+  PRIMARY KEY (`code`,`date`),
+  KEY `date` (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+PARTITION BY RANGE (YEAR(`date`))
+(
+PARTITION p92 VALUES LESS THAN (1993) ENGINE=InnoDB,
+PARTITION p93 VALUES LESS THAN (1994) ENGINE=InnoDB,
+PARTITION p94 VALUES LESS THAN (1995) ENGINE=InnoDB,
+PARTITION p95 VALUES LESS THAN (1996) ENGINE=InnoDB,
+PARTITION p96 VALUES LESS THAN (1997) ENGINE=InnoDB,
+PARTITION p97 VALUES LESS THAN (1998) ENGINE=InnoDB,
+PARTITION p98 VALUES LESS THAN (1999) ENGINE=InnoDB,
+PARTITION p99 VALUES LESS THAN (2000) ENGINE=InnoDB,
+PARTITION p00 VALUES LESS THAN (2001) ENGINE=InnoDB,
+PARTITION p01 VALUES LESS THAN (2002) ENGINE=InnoDB,
+PARTITION p02 VALUES LESS THAN (2003) ENGINE=InnoDB,
+PARTITION p03 VALUES LESS THAN (2004) ENGINE=InnoDB,
+PARTITION p04 VALUES LESS THAN (2005) ENGINE=InnoDB,
+PARTITION p05 VALUES LESS THAN (2006) ENGINE=InnoDB,
+PARTITION p06 VALUES LESS THAN (2007) ENGINE=InnoDB,
+PARTITION p07 VALUES LESS THAN (2008) ENGINE=InnoDB,
+PARTITION p08 VALUES LESS THAN (2009) ENGINE=InnoDB,
+PARTITION p09 VALUES LESS THAN (2010) ENGINE=InnoDB,
+PARTITION p10 VALUES LESS THAN (2011) ENGINE=InnoDB,
+PARTITION p11 VALUES LESS THAN (2012) ENGINE=InnoDB,
+PARTITION p12 VALUES LESS THAN (2013) ENGINE=InnoDB,
+PARTITION p13 VALUES LESS THAN (2014) ENGINE=InnoDB,
+PARTITION p14 VALUES LESS THAN (2015) ENGINE=InnoDB,
+PARTITION p15 VALUES LESS THAN (2016) ENGINE=InnoDB,
+PARTITION p16 VALUES LESS THAN (2017) ENGINE=InnoDB,
+PARTITION p0000 VALUES LESS THAN MAXVALUE ENGINE=InnoDB
+);
+
+--
+-- 触发器 `dayline_tmp`
+--
+DROP TRIGGER IF EXISTS `update_adjfactor_sync`;
+DELIMITER $$
+CREATE TRIGGER `update_adjfactor_sync` AFTER INSERT ON `dayline_tmp` FOR EACH ROW UPDATE `dayline`
+SET 
+`dayline`.`adjfactor`=NEW.`adjfactor`,
+`dayline`.`adjcump`=NEW.`adjcump`
+WHERE
+`dayline`.`code`=NEW.`code` AND
+`dayline`.`date`=NEW.`date`
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -686,7 +746,7 @@ CREATE TABLE IF NOT EXISTS `news` (
   UNIQUE KEY `link` (`link`),
   KEY `type` (`type`),
   KEY `datetime` (`datetime`)
-) ENGINE=InnoDB AUTO_INCREMENT=517622 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=567705 DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
 
@@ -746,6 +806,33 @@ DELIMITER ;
 DROP TRIGGER IF EXISTS `after_update_on_stocklist`;
 DELIMITER $$
 CREATE TRIGGER `after_update_on_stocklist` AFTER UPDATE ON `stocklist` FOR EACH ROW UPDATE `basedata` SET `证券简称`=NEW.`证券简称` WHERE `basedata`.`证券代码`=NEW.`证券代码`
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `tmp`
+--
+
+DROP TABLE IF EXISTS `tmp`;
+CREATE TABLE IF NOT EXISTS `tmp` (
+  `code` varchar(63) NOT NULL,
+  `date` date NOT NULL,
+  `percentage` float NOT NULL,
+  PRIMARY KEY (`code`,`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- 触发器 `tmp`
+--
+DROP TRIGGER IF EXISTS `precentage_sync`;
+DELIMITER $$
+CREATE TRIGGER `precentage_sync` AFTER INSERT ON `tmp` FOR EACH ROW UPDATE `usefuldata`
+SET
+`usefuldata`.`precentage` = New.`percentage`
+WHERE
+`usefuldata`.`code`=NEW.`code` and `usefuldata`.`date`=NEW.`date`
 $$
 DELIMITER ;
 

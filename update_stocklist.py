@@ -68,5 +68,5 @@ def update_stocklist(conn=localconn(),proxy=0):
 
 if __name__ == "__main__" :
     error = update_stocklist(conn=localconn(),proxy=0)
-    df_error =pd.DataFrame(error)
+    df_error = pd.DataFrame(error)
     df_error.to_csv(path()+'/error/update_stocklist.csv')

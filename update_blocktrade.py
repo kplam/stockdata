@@ -13,21 +13,15 @@ from time import sleep
 from random import random
 from numpy import nan
 
-today = datetime.date.today()
-conn = localconn()
-# sql_date = "select distinct `date` from `indexdb` where `date`>'2013-10-01' ORDER BY `date` ASC "
-# list_date = pd.read_sql(sql_date,conn)['date'].values
-list_date =[today]
-
-def get_blocktrade(list_date):
+def get_blocktrade(list_date,conn=localconn(),proxy=0):
     list_date_error=[]
     for date in list_date:
         try:
             print(str(date))
             url="http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?type=DZJYXQ&token=70f12f2f4f091e459a279469fe49eca5&cmd=&p=1&ps=500&st=st=SECUCODE&sr=1&filter=(TDATE=^%s^)&rt=50385715"%(str(date))
-            data =spyder(url,0).content.decode('utf-8')
+            data =spyder(url,proxy=proxy).content.decode('utf-8')
             list = pd.read_json(data,orient='table',dtype={'SECUCODE':str})
-            list =list.values
+            list = list.values
             list = pd.DataFrame(list,columns=['买方代码','买方营业部','收盘价','成交额流通市值占比','成交价','涨跌幅','10日涨跌幅','次日涨跌幅','20日涨跌幅','5日涨跌幅','卖方代码','卖方营业部','code','name','类型','交易日期','市场','成交额','成交量','单位','YSSLTAG','折价率'])
             list['折价率'] = list['折价率'] * 100
             list = list[['code','name','交易日期','买方代码','买方营业部','收盘价','成交价','涨跌幅','卖方代码','卖方营业部','类型','市场','成交额','成交量','单位','YSSLTAG']]
@@ -42,8 +36,13 @@ def get_blocktrade(list_date):
             list_date_error.append(str(date))
     return list_date_error
 
-error=get_blocktrade(list_date)
-while len(error) !=0:
-    error = get_blocktrade(error)
-
-
+if __name__ == "__main__" :
+    today = datetime.date.today()
+    # sql_date = "select distinct `date` from `indexdb` where `date`>'2013-10-01' ORDER BY `date` ASC "
+    # list_date = pd.read_sql(sql_date,conn)['date'].values
+    list_date = [today]
+    times_retry = 3
+    error = get_blocktrade(list_date=list_date,conn=localconn(),proxy=0)
+    while len(error) != 0 and times_retry != 0:
+        error = get_blocktrade(list_date=error,conn=localconn(),proxy=0)
+        times_retry -= 1

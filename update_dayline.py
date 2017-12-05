@@ -62,7 +62,9 @@ print("Update indexs daybar done!")
 dfErrorList = pd.DataFrame({'error': errorlist_index})
 dfErrorList.to_csv(path()+'/error/update_indexdaybar.csv')
 print(dfErrorList)
+
 # =============== update stock daybar ============== #
+
 df_stockdaybar = get_sina_daybar(stocklist,proxy=0)
 errorlist_stock=[]
 try:

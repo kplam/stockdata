@@ -45,6 +45,7 @@ def get_news(url,proxy):
     result= pd.DataFrame(result,columns=['source','type','title','link','datetime'])
     result['datetime'] =result['datetime'].astype('datetime64[ns]')
     return result
+
 errorlist=[]
 for i in range(len(urllist)):
     try:

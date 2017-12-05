@@ -38,10 +38,10 @@ def get_forecast(conn=localconn(),proxy=0,lastday=0,update=1):
         url = 'http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=YJYG&fd=%s&st=4&sr=true&p=1&ps=%s' \
               % (Quarter, iLong)
         content = "error!"
-        times_retry =3
+        times_retry = 3
         while content =="error!" and times_retry!=0:
             content = spyder(url,proxy=proxy).content.decode('utf-8')
-            times_retry -=1
+            times_retry -= 1
         print(Quarter, "数据抓取完毕，正在对数据进行处理...")
         try:
             return_list = re.findall("\"(.*?)\"", content)
@@ -59,7 +59,7 @@ def get_forecast(conn=localconn(),proxy=0,lastday=0,update=1):
     df_forecast['date'] = df_forecast['date'].astype('datetime64', error='ignore')
     df_forecast['财报日期'] = df_forecast['财报日期'].astype('datetime64', error='ignore')
     print("数据处理完毕，正在更新数据库...")
-    if update==1:
+    if update == 1:
         df_forecast = df_forecast[df_forecast['date']>=today]
     else:
         df_forecast = df_forecast

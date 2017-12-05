@@ -13,7 +13,7 @@ from time import sleep
 from random import random
 from numpy import nan
 
-def get_blocktrade(list_date,conn=localconn(),proxy=0):
+def get_blocktrade(list_date,ser=localconn(),proxy=0):
     list_date_error=[]
     for date in list_date:
         try:
@@ -29,7 +29,7 @@ def get_blocktrade(list_date,conn=localconn(),proxy=0):
             list['收盘价']=list['收盘价'].astype(float)
             list['交易日期'] = list['交易日期'].astype('datetime64')
             list.to_csv('./data/blocktrade/'+str(date)+'.csv')
-            list.to_sql('blocktrade',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
+            list.to_sql('blocktrade',ser,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
             sleep(random()/10+3)
         except Exception as e:
             print(str(date),e)
@@ -42,7 +42,7 @@ if __name__ == "__main__" :
     # list_date = pd.read_sql(sql_date,conn)['date'].values
     list_date = [today]
     times_retry = 3
-    error = get_blocktrade(list_date=list_date,conn=localconn(),proxy=0)
+    error = get_blocktrade(list_date=list_date,ser=localconn(),proxy=0)
     while len(error) != 0 and times_retry != 0:
-        error = get_blocktrade(list_date=error,conn=localconn(),proxy=0)
+        error = get_blocktrade(list_date=error,ser=localconn(),proxy=0)
         times_retry -= 1

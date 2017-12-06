@@ -106,3 +106,4 @@ kpfunc/getdata.py
 *.bak
 tmp02.py
 tmp03.py
+*.json

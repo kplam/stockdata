@@ -11,7 +11,12 @@ from kpfunc.function import txt_pre,path
 from time import sleep
 from random import random
 import pandas as pd
+"""
 
+http://data.eastmoney.com/gstc/search.ashx?SortType=SECURITYCODE&SortRule=1&PageIndex=1&PageSize=5000&jsObj=pyMzRbUF&marketValue=&keyWord=&peRation=&pbRation=&mainPoint=Qbtc&rt=50417793
+
+主营分析：http://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/BusinessAnalysisAjax?code=sh603533
+"""
 def update_embasedata(stocklist,ser,proxy):
     Errorlist=[]
     if ser == "server":

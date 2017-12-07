@@ -7,14 +7,16 @@ Created on 15:20:00 2017-12-06
 """
 from kpfunc.spyder import spyder
 from kpfunc.getdata import localconn,serverconn
+from kpfunc.function import path
 from time import sleep
 from random import random
 import datetime
 import pandas as pd
-import json,re
+import json
 
 def notices(page,conn=localconn(),proxy=0):
-    sleep(random()/10+3)
+    today=datetime.date.today()
+    sleep(random()/10*2+0.5)
     print("page:",page)
     try:
         url = "http://data.eastmoney.com/notices/getdata.ashx?FirstNodeType=0&CodeType=1&PageIndex=%s&PageSize=810"%(page)
@@ -35,13 +37,14 @@ def notices(page,conn=localconn(),proxy=0):
             output['Url'] = "http://pdf.dfcfw.com/pdf/H2_"+output['INFOCODE']+"_1.pdf" if output['ATTACHTYPE']=='0' else output['Url']
             tmp_table =pd.DataFrame.from_dict(output,orient='index')
             table =pd.concat((tmp_table.T,table),ignore_index=True)
-        # table.to_csv('notices.csv')
         table=table[['NOTICEDATE','NOTICETITLE','INFOCODE','EUTIME','Url','SECURITYCODE','SECURITYFULLNAME','SECURITYTYPE','TRADEMARKET','COLUMNNAME']]
         table['NOTICEDATE']=table['NOTICEDATE'].astype('datetime64')
         table['EUTIME']=table['EUTIME'].astype('datetime64')
         table = table.rename(columns={'NOTICEDATE':'date','NOTICETITLE':'title','INFOCODE':'infocode','EUTIME':'eutime',
                                       'Url':'url','SECURITYCODE':'code','SECURITYFULLNAME':'name','SECURITYTYPE':'security_type',
                                       'TRADEMARKET':'market','COLUMNNAME':'type'})
+        # table=table[table['eutime']>=today]
+        table.to_csv(path()+'/data/notice/'+str(today)+'.csv',encoding='utf-8')
         for line in table.values:
             sql_updae =" insert ignore into `notice` (`date`, `title`, `infocode`, `eutime`, `url`, `code`, `name`, " \
                        "`security_type`, `market`, `type`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
@@ -49,14 +52,16 @@ def notices(page,conn=localconn(),proxy=0):
             cur = conn.cursor()
             cur.execute(sql_updae,tuple(param))
             conn.commit()
-        return None
+        # return None
     except Exception as e:
         print(e)
         return page
 
-
 if __name__ =="__main__":
-    pages = range(1000)
+    pages = range(1,985)[::-1]
     times_retry = 3
-    while len(pages) !=0 and times_retry !=0 :
-        pages =[notices(page+1) for page in pages]
+    while len(pages) != 0 and times_retry != 0 :
+        pages = [notices(page) for page in pages]
+        pages = list(set(pages))
+        pages.remove(None)
+        times_retry -= 1

@@ -15,7 +15,7 @@ import multiprocessing
 
 def get_ip_list_online():
     ip_list = []
-    for i in range(1,10):
+    for i in range(1,20):
         url = 'http://www.xicidaili.com/wt/%s'%(i)
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'
@@ -32,7 +32,8 @@ def get_ip_list_online():
 
 def ip_check(*path):
     # url_list = ['http://www.baidu.com','http://www.sina.com','http://www.qq.com','http://www.163.com','http://www.cntv.cn','http://www.sohu.com','http://www.youku.com']#打算抓取内容的网页
-    url_list =['http://kuaixun.stcn.com/index.shtml','http://www.eastmoney.com/','http://www.sina.com']
+    # url_list =['http://kuaixun.stcn.com/index.shtml','http://www.eastmoney.com/','http://www.sina.com']
+    url_list=['http://mdfm.eastmoney.com/EM_UBG_MinuteApi/Js/Get?dtype=all&id=0000012&page=1&rows=10000&gtvolume=&sort=asc']
     ip_list = get_ip_list_online()
     print(ip_list)
     if len(path)!=0:

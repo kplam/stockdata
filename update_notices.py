@@ -19,7 +19,7 @@ def notices(page,conn=localconn(),proxy=0):
     sleep(random()/10*2+0.5)
     print("page:",page)
     try:
-        url = "http://data.eastmoney.com/notices/getdata.ashx?FirstNodeType=0&CodeType=1&PageIndex=%s&PageSize=810"%(page)
+        url = "http://data.eastmoney.com/notices/getdata.ashx?FirstNodeType=0&CodeType=1&PageIndex=%s&PageSize=500"%(page)
         html =spyder(url,proxy=proxy).content
         js =json.loads(html.decode('gbk')[7:-1])['data']
         table=pd.DataFrame()
@@ -43,7 +43,7 @@ def notices(page,conn=localconn(),proxy=0):
         table = table.rename(columns={'NOTICEDATE':'date','NOTICETITLE':'title','INFOCODE':'infocode','EUTIME':'eutime',
                                       'Url':'url','SECURITYCODE':'code','SECURITYFULLNAME':'name','SECURITYTYPE':'security_type',
                                       'TRADEMARKET':'market','COLUMNNAME':'type'})
-        # table=table[table['eutime']>=today]
+        table=table[table['eutime']>=today]
         table.to_csv(path()+'/data/notice/'+str(today)+'.csv',encoding='utf-8')
         for line in table.values:
             sql_updae =" insert ignore into `notice` (`date`, `title`, `infocode`, `eutime`, `url`, `code`, `name`, " \
@@ -58,7 +58,7 @@ def notices(page,conn=localconn(),proxy=0):
         return page
 
 if __name__ =="__main__":
-    pages = range(1,985)[::-1]
+    pages = range(1,3)[::-1]
     times_retry = 3
     while len(pages) != 0 and times_retry != 0 :
         pages = [notices(page) for page in pages]

@@ -9,11 +9,8 @@ from kpfunc.spyder import spyder
 from kpfunc.getdata import localconn,serverconn
 from kpfunc.function import path
 from numpy import nan
-from time import sleep
-from random import random
-import datetime
+import datetime,re
 import pandas as pd
-import json,re
 
 def spo(conn=localconn(),proxy=0):
     errorlist=[]

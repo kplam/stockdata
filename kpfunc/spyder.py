@@ -11,7 +11,8 @@ import pandas as pd
 from bs4 import BeautifulSoup as bs
 import random
 import socket, urllib
-import multiprocessing
+import gevent
+from gevent import monkey; monkey.patch_all()
 
 def get_ip_list_online():
     ip_list = []

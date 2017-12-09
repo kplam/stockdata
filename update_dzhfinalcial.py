@@ -11,7 +11,7 @@ import pandas as pd
 
 def update_financial(filename,conn=localconn()):
     file_path = path()+"/data/dzhfinancial/"+filename+".csv"
-    df_data = pd.read_csv(file_path)
+    df_data = pd.read_csv(file_path,encoding='gbk')
     list_data=df_data.values
     errorlist = []
     for i in range(len(list_data)):
@@ -25,4 +25,4 @@ def update_financial(filename,conn=localconn()):
                 print(e)
     return errorlist
 if __name__=="__main__":
-    error = update_financial('20171202',conn=serverconn())
+    error = update_financial('20171209',conn=localconn())

@@ -145,6 +145,22 @@ def getpinyin(string):
             charLst.append(single_get_first(l))
     return ''.join(charLst)
 
+def gbk_to_utf8(filepath='./data/dzhdata/'):
+    files = GetFileList(filepath)
+    for file in files:
+        print(file)
+        try:
+            global content
+            f = open(file,'r',encoding='gbk')
+            content= f.read()
+            f2 =open(file,'w',encoding='utf-8')
+            f2.write(content)
+            f2.close()
+        except Exception as e:
+            print(e)
+
+
 if __name__ == "__main__":
+
     print("Content-type:text/html\n\n")
     print("error!")

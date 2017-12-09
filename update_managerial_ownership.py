@@ -8,7 +8,7 @@ Created on 15:20:00 2017-12-07
 from kpfunc.spyder import spyder
 from kpfunc.getdata import localconn,serverconn
 from kpfunc.function import path
-import re
+import re,datetime
 import pandas as pd
 from time import sleep
 from random import random
@@ -16,6 +16,7 @@ from random import random
 http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=GG&sty=GGMX&p=1&ps=1000
 """
 def mo(pages,conn=localconn(),proxy=0):
+    today = datetime.date.today()
     error=[]
     df=pd.DataFrame()
     for page in pages:
@@ -34,12 +35,13 @@ def mo(pages,conn=localconn(),proxy=0):
             print(e)
             error.append(page)
     df=df.drop_duplicates()
-    df=df.sort_values(by=['日期'])
+    df['日期']=df['日期'].astype('datetime64')
+    df=df[df['日期']>=today]
     df.to_sql('managerial',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
     return error
 
 if __name__ =="__main__":
-    pages = range(1,16)
+    pages = range(1,2)
     times_retry=3
     while len(pages)!=0 and times_retry!=0:
         pages = mo(pages)

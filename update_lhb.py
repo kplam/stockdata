@@ -40,28 +40,32 @@ def get_lhbdetail(code,date,proxy):
         df_detail = pd.concat((tmp_detail,df_detail))
     return df_detail
 
-# sql_date = "select distinct `date` from `indexdb` WHERE `date`>='2017-01-01' ORDER BY `date` ASC "
-# list_date = pd.read_sql(sql_date,localconn())['date'].values
-today =datetime.date.today()
-list_date=[today]
-errorlist =[]
-for date in list_date:
-    df_lhbdetail = pd.DataFrame()
-    try:
-        lhb_list = get_lhblist(str(date),proxy=0)
-        print(str(date),len(lhb_list))
-        if len(lhb_list) ==0:
-            errorlist.append((str(date),0))
-        for code in lhb_list:
-            print(str(date),code)
-            tmp_lhbdetail = get_lhbdetail(code,str(date),proxy=0)
-            # tmp_lhbdetail =tmp_lhbdetail.drop_duplicates()
-            df_lhbdetail = pd.concat((tmp_lhbdetail,df_lhbdetail))
-            sleep(random()/10+1)
-    except Exception as e:
-        print(str(date),e)
-        errorlist.append((str(date),code,e))
-    df_lhbdetail.to_csv('./data/lhb/'+str(date)+'.csv',encoding='utf-8')
-    df_lhbdetail.to_sql('lhb',localconn(),flavor='mysql',schema='stockdata',if_exists='append',index=True,chunksize=10000)
-df_error = pd.DataFrame(errorlist)
-df_error.to_csv('./data/lhb/error.csv')
+def lhb():
+    # sql_date = "select distinct `date` from `indexdb` WHERE `date`>='2017-01-01' ORDER BY `date` ASC "
+    # list_date = pd.read_sql(sql_date,localconn())['date'].values
+    today =datetime.date.today()
+    list_date=[today]
+    errorlist =[]
+    for date in list_date:
+        df_lhbdetail = pd.DataFrame()
+        try:
+            lhb_list = get_lhblist(str(date),proxy=0)
+            print(str(date),len(lhb_list))
+            if len(lhb_list) ==0:
+                errorlist.append((str(date),0))
+            for code in lhb_list:
+                print(str(date),code)
+                tmp_lhbdetail = get_lhbdetail(code,str(date),proxy=0)
+                # tmp_lhbdetail =tmp_lhbdetail.drop_duplicates()
+                df_lhbdetail = pd.concat((tmp_lhbdetail,df_lhbdetail))
+                sleep(random()/10+1)
+        except Exception as e:
+            print(str(date),e)
+            errorlist.append((str(date),code,e))
+        df_lhbdetail.to_csv('./data/lhb/'+str(date)+'.csv',encoding='utf-8')
+        df_lhbdetail.to_sql('lhb',localconn(),flavor='mysql',schema='stockdata',if_exists='append',index=True,chunksize=10000)
+    df_error = pd.DataFrame(errorlist)
+    df_error.to_csv('./data/lhb/error.csv')
+
+if __name__ == "__main__" :
+    lhb()

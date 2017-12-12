@@ -15,7 +15,7 @@ import pandas as pd
 def spo(conn=localconn(),proxy=0):
     errorlist=[]
     today=datetime.date.today()
-    url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=50&st=5"
+    url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=5000&st=5"
     html = spyder(url,proxy=proxy).content
     table = eval(html.decode('utf-8'))
     list =[]

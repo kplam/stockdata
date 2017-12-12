@@ -13,7 +13,8 @@ import datetime,re
 
 
 class update_bar:
-    def __init__(self):
+    def __init__(self,conn=localconn()):
+        self.conn =conn
         self.stocklist = get_stocklist_prefix('sh','sz',pre=1)
         self.indexlist = get_indexlist_prefix('sh','sz',pre=1)
         self.url = "http://hq.sinajs.cn/list=%s"
@@ -69,58 +70,57 @@ class update_bar:
         dayline = dayline[dayline['vol']>0]
         return dayline
 
-    def update_index(self,conn=localconn()):
+    def update_index(self):
         self.urllist = []
         self.htmllist = []
         self.get_urllist('index')
         self.get_data(proxy=0)
         df_index = self.to_df()
         try:
-            df_index.to_sql('indexdb',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False)
+            df_index.to_sql('indexdb',self.conn,flavor='mysql',schema='stockdata',if_exists='append',index=False)
         except Exception as e:
             print(e)
         return df_index
 
-    def update_stock(self,conn=localconn()):
+    def update_stock(self):
         self.urllist = []
         self.htmllist = []
         self.get_urllist('stock')
         self.get_data(proxy=0)
         df_stock = self.to_df()
         try:
-            df_stock.to_sql('indexdb',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False)
+            df_stock.to_sql('indexdb',self.conn,flavor='mysql',schema='stockdata',if_exists='append',index=False)
         except Exception as e:
             print(e)
         return df_stock
 
-if __name__=='__main__':
+    def update_stock_status(self):    #  update stock status
+        stocklist = update_bar().stocklist
+        sql_index = "select * from `indexdb` WHERE `code`='000001' order by `date` desc limit 0,1"
+        df_index = pd.read_sql(sql_index,self.conn)
+        date_index = df_index.get_value(0,'date')
+        print("Updating stock status...")
+        for code in stocklist:
+            sql_daybar = "select * from `dayline` where `code`='%s'order by `date` desc limit 0,1" % (code[2:])
+            df_daybar = pd.read_sql(sql_daybar,self.conn)
+            if df_daybar.empty == False:
+                date_daybar = df_daybar.get_value(0,'date')
+                if date_daybar == date_index:
+                    sql_stocklist = "update `stocklist` set `交易状态`=1 where 证券代码='%s'" % (code)
+                elif date_index > date_daybar:
+                    sql_stocklist = "update `stocklist` set `交易状态`=0 where 证券代码='%s'" % (code)
+                else:
+                    sql_stocklist = "update `stocklist` set `交易状态`=9 where 证券代码='%s'" % (code)
+            else:
+                sql_stocklist = "update `stocklist` set `交易状态`=9 where 证券代码='%s'" % (code)
+            cur = self.conn.cursor()
+            cur.execute(sql_stocklist)
+            self.conn.commit()
+
+if __name__ == '__main__' :
     update_bar().update_stock()
     print("Update stock daybar done!")
     update_bar().update_index()
     print("Update index daybar done!")
-
-    # =============== update stock status ============== #
-    stocklist = update_bar().stocklist
-    conn=localconn()
-    sql_index = "select * from `indexdb` WHERE `code`='000001' order by `date` desc limit 0,1"
-    df_index = pd.read_sql(sql_index,conn)
-    date_index = df_index.get_value(0,'date')
-    print("Updating stock status...")
-    for code in stocklist:
-        sql_daybar = "select * from `dayline` where `code`='%s'order by `date` desc limit 0,1"%(code[2:])
-        df_daybar = pd.read_sql(sql_daybar,conn)
-        if df_daybar.empty ==False:
-            date_daybar = df_daybar.get_value(0,'date')
-            if date_daybar == date_index:
-                sql_stocklist = "update `stocklist` set `交易状态`=1 where 证券代码='%s'"%(code)
-            elif date_index > date_daybar:
-                sql_stocklist = "update `stocklist` set `交易状态`=0 where 证券代码='%s'"%(code)
-            else:
-                sql_stocklist = "update `stocklist` set `交易状态`=9 where 证券代码='%s'"%(code)
-        else:
-            sql_stocklist = "update `stocklist` set `交易状态`=9 where 证券代码='%s'" % (code)
-        cur = conn.cursor()
-        cur.execute(sql_stocklist)
-        conn.commit()
+    update_bar().update_stock_status()
     print('Update Stock Status Done!')
-

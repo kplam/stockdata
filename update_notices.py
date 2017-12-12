@@ -15,7 +15,7 @@ import pandas as pd
 import json
 
 def notices(page,conn=localconn(),proxy=0):
-    today=datetime.date.today()
+    today=datetime.date.today() #- datetime.timedelta(days=2)
     sleep(random()/10*2+0.5)
     print("page:",page)
     try:

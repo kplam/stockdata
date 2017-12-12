@@ -9,22 +9,6 @@ import datetime
 from kpfunc.getdata import *
 from kpfunc.spyder import spyder
 
-# ============ global define ============== #
-conn = localconn()
-List_stock = get_stocklist()
-iLong = int((round(len(List_stock)/1000,0)+1)*1000)
-
-# ============== set Quarter================ #
-today = datetime.date.today()
-print("今天是",today,".")
-iyear = int(str(today)[0:4])
-imonth = int(str(today)[5:7])
-Q4 = datetime.datetime(iyear-1,12,31).strftime('%Y-%m-%d')
-Q3 = datetime.datetime(iyear-1,9,30).strftime('%Y-%m-%d') if imonth <= 9 else datetime.datetime(iyear,9,30).strftime('%Y-%m-%d')
-Q2 = datetime.datetime(iyear-1,6,30).strftime('%Y-%m-%d') if imonth <= 6 else datetime.datetime(iyear, 6, 30).strftime('%Y-%m-%d')
-Q1 = datetime.datetime(iyear-1,3,31).strftime('%Y-%m-%d') if imonth <= 3 else datetime.datetime(iyear, 3, 31).strftime('%Y-%m-%d')
-List_Quarter =[Q1,Q2,Q3,Q4]
-
 def split_sz(Quarter,iLong,proxy): # 送转
     sztable = []
     List_Fin_SZ = []
@@ -157,60 +141,80 @@ def split_pg(proxy):  # 配股
             pass
     return List_Fin_pg
 
-# ========== 送转分红 ============ #
-df_ftsplit = pd.DataFrame()
-times_retry = 3
-while df_ftsplit.empty == True and times_retry!=0:
-    print("正在获取分红数据...")
-    for Quarter in List_Quarter:
-        df_Fin_SZ = split_sz(Quarter=Quarter,iLong=iLong,proxy=0)
-        df_Fin_xj = split_xj(Quarter=Quarter,iLong=iLong,proxy=0)
-        df_Fin = pd.concat((df_Fin_SZ, df_Fin_xj)).sort_values('date', ascending=False).drop_duplicates()
-        df_ftsplit = pd.concat((df_ftsplit,df_Fin))
+def ftsplit():
+    # ============ global define ============== #
+    conn = localconn()
+    List_stock = get_stocklist()
+    iLong = int((round(len(List_stock)/1000,0)+1)*1000)
 
-    df_ftsplit = pd.DataFrame(np.array(df_ftsplit),columns=['code','红股','红利','date'])
-    times_retry = times_retry-1
+    # ============== set Quarter================ #
+    today = datetime.date.today()
+    print("今天是",today,".")
+    iyear = int(str(today)[0:4])
+    imonth = int(str(today)[5:7])
+    Q4 = datetime.datetime(iyear-1,12,31).strftime('%Y-%m-%d')
+    Q3 = datetime.datetime(iyear-1,9,30).strftime('%Y-%m-%d') if imonth <= 9 else datetime.datetime(iyear,9,30).strftime('%Y-%m-%d')
+    Q2 = datetime.datetime(iyear-1,6,30).strftime('%Y-%m-%d') if imonth <= 6 else datetime.datetime(iyear, 6, 30).strftime('%Y-%m-%d')
+    Q1 = datetime.datetime(iyear-1,3,31).strftime('%Y-%m-%d') if imonth <= 3 else datetime.datetime(iyear, 3, 31).strftime('%Y-%m-%d')
+    List_Quarter =[Q1,Q2,Q3,Q4]
+    # ========== 送转分红 ============ #
+    df_ftsplit = pd.DataFrame()
+    times_retry = 3
+    while df_ftsplit.empty == True and times_retry!=0:
+        print("正在获取分红数据...")
+        for Quarter in List_Quarter:
+            df_Fin_SZ = split_sz(Quarter=Quarter,iLong=iLong,proxy=0)
+            df_Fin_xj = split_xj(Quarter=Quarter,iLong=iLong,proxy=0)
+            df_Fin = pd.concat((df_Fin_SZ, df_Fin_xj)).sort_values('date', ascending=False).drop_duplicates()
+            df_ftsplit = pd.concat((df_ftsplit,df_Fin))
 
-df_sqlupdate = df_ftsplit[df_ftsplit['date']==today]
+        df_ftsplit = pd.DataFrame(np.array(df_ftsplit),columns=['code','红股','红利','date'])
+        times_retry = times_retry-1
 
-if df_sqlupdate.empty != True:
-    df_sqlupdate = df_sqlupdate.reset_index(range(len(df_sqlupdate)), drop=True)
-    for i in range(len(df_sqlupdate)):
-        code = str(df_sqlupdate.get_value(i,'code'))
-        sz = float(df_sqlupdate.get_value(i,'红股'))
-        xj = float(df_sqlupdate.get_value(i,'红利'))
-        sdate = str(df_sqlupdate.get_value(i,'date'))
-        sql_param=(code,sz,xj,sdate)
-        sql_update = "INSERT IGNORE INTO `ftsplit`(`code`, `红股`, `红利`,`date`) VALUES (%s,%s,%s,%s)"
-        cur = conn.cursor()
-        cur.execute(sql_update,sql_param)
-        conn.commit()
-    conn.close()
-    print("数据写入完毕！")
-else:
-    print("没有可写入的数据！")
+    df_sqlupdate = df_ftsplit[df_ftsplit['date']==today]
 
-# ========== 配股信息 ============ #
-df_pg = pd.DataFrame()
-print("正在查找配股信息...")
-times_retry = 3
-while df_pg.empty ==True and times_retry!=0:
-    df_pg = split_pg(proxy=0)
-    times_retry = times_retry-1
-df_pg['除权日']=df_pg['除权日'].astype('datetime64')
-df_pg = df_pg[df_pg['除权日']==today]
-if df_pg.empty !=True:
-    df_pg = df_pg.reset_index(range(len(df_pg)), drop=True)
-    for m in range(len(df_pg)):
-        Date_pg = df_pg.get_value(m,'除权日')
-        Code_pg = df_pg.get_value(m,'股票代码')
-        bl_pg = df_pg.get_value(m,'配股比例（10配）')
-        pgj_pg = df_pg.get_value(m,'配股价')
-        sql_ftsplitupdate="INSERT IGNORE INTO `ftsplit`(`code`, `date`, `配股`, `配股价`) VALUES ('%s','%s','%s','%s')"%(Code_pg,Date_pg,bl_pg,pgj_pg)
-        cur=conn.cursor()
-        cur.execute(sql_ftsplitupdate)
-        conn.commit()
-    conn.close()
-    print("配股信息更新完毕!")
-else:
-    print("没有可更新的配股信息!")
+    if df_sqlupdate.empty != True:
+        df_sqlupdate = df_sqlupdate.reset_index(range(len(df_sqlupdate)), drop=True)
+        for i in range(len(df_sqlupdate)):
+            code = str(df_sqlupdate.get_value(i,'code'))
+            sz = float(df_sqlupdate.get_value(i,'红股'))
+            xj = float(df_sqlupdate.get_value(i,'红利'))
+            sdate = str(df_sqlupdate.get_value(i,'date'))
+            sql_param=(code,sz,xj,sdate)
+            sql_update = "INSERT IGNORE INTO `ftsplit`(`code`, `红股`, `红利`,`date`) VALUES (%s,%s,%s,%s)"
+            cur = conn.cursor()
+            cur.execute(sql_update,sql_param)
+            conn.commit()
+        conn.close()
+        print("数据写入完毕！")
+    else:
+        print("没有可写入的数据！")
+
+    # ========== 配股信息 ============ #
+    df_pg = pd.DataFrame()
+    print("正在查找配股信息...")
+    times_retry = 3
+    while df_pg.empty ==True and times_retry!=0:
+        df_pg = split_pg(proxy=0)
+        times_retry = times_retry-1
+    df_pg['除权日']=df_pg['除权日'].astype('datetime64')
+    df_pg = df_pg[df_pg['除权日']==today]
+    if df_pg.empty !=True:
+        df_pg = df_pg.reset_index(range(len(df_pg)), drop=True)
+        for m in range(len(df_pg)):
+            Date_pg = df_pg.get_value(m,'除权日')
+            Code_pg = df_pg.get_value(m,'股票代码')
+            bl_pg = df_pg.get_value(m,'配股比例（10配）')
+            pgj_pg = df_pg.get_value(m,'配股价')
+            sql_ftsplitupdate="INSERT IGNORE INTO `ftsplit`(`code`, `date`, `配股`, `配股价`) VALUES ('%s','%s','%s','%s')"%(Code_pg,Date_pg,bl_pg,pgj_pg)
+            cur=conn.cursor()
+            cur.execute(sql_ftsplitupdate)
+            conn.commit()
+        conn.close()
+        print("配股信息更新完毕!")
+    else:
+        print("没有可更新的配股信息!")
+    return 1
+
+if __name__ == "__main__":
+    ftsplit()

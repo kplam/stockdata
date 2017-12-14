@@ -89,7 +89,7 @@ class update_bar:
         self.get_data(proxy=0)
         df_stock = self.to_df()
         try:
-            df_stock.to_sql('indexdb',self.conn,flavor='mysql',schema='stockdata',if_exists='append',index=False)
+            df_stock.to_sql('dayline',self.conn,flavor='mysql',schema='stockdata',if_exists='append',index=False)
         except Exception as e:
             print(e)
         return df_stock
@@ -118,9 +118,9 @@ class update_bar:
             self.conn.commit()
 
 if __name__ == '__main__' :
-    update_bar().update_stock()
+    update_bar(conn=localconn()).update_stock()
     print("Update stock daybar done!")
-    update_bar().update_index()
+    update_bar(conn=localconn()).update_index()
     print("Update index daybar done!")
-    update_bar().update_stock_status()
+    update_bar(conn=localconn()).update_stock_status()
     print('Update Stock Status Done!')

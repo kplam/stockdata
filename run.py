@@ -39,20 +39,20 @@ BS = BlockingScheduler()
 # status_update_basedata = 1
 # status_update_mo = 0
 
-@BS.scheduled_job('interval',minutes=1,id='run_news')
+@BS.scheduled_job('interval', max_instances=10, minutes=1, id='run_news')
 def run_news():
     stcn_news()
 
-@BS.scheduled_job('interval',minutes=1,id='run_newscontent')
+@BS.scheduled_job('interval', max_instances=10, minutes=1, id='run_newscontent')
 def run_newscontent():
     news_content()
 
-@BS.scheduled_job('interval',hours=1,id='run_forecast')
+@BS.scheduled_job('interval', max_instances=10, hours=2, id='run_forecast')
 def run_forecast():
     print("Forecast...")
     get_forecast()
 
-@BS.scheduled_job('interval',hours=2,id='run_notices')
+@BS.scheduled_job('interval', max_instances=10, hours=3,id='run_notices')
 def run_notices():
     pages = range(1, 3)[::-1]
     times_retry = 3
@@ -62,7 +62,7 @@ def run_notices():
         pages.remove(None)
         times_retry -= 1
 
-@BS.scheduled_job('interval',hours=8,id='run_notices')
+@BS.scheduled_job('interval', max_instances=10, hours=8,id='run_notices')
 def run_basedata():
     # global status_update_basedata
     try:
@@ -77,7 +77,7 @@ def run_basedata():
         print("Basedata:",e)
         # status_update_basedata = 9
 
-@BS.scheduled_job('cron',hour=20,id='run_stocklist')
+@BS.scheduled_job('cron', max_instances=10, hour=20,id='run_stocklist')
 def run_stocklist():
     # global status_update_stocklist
     try:
@@ -87,7 +87,7 @@ def run_stocklist():
         print("Stocklist:",e)
         # status_update_stocklist = 9
 
-@BS.scheduled_job('cron',hour=20,id='run_mo')
+@BS.scheduled_job('cron', max_instances=10, hour=20,id='run_mo')
 def run_mo():
     # global status_update_mo
     pages = range(1, 2)
@@ -98,7 +98,7 @@ def run_mo():
         print("MO:",e)
         # status_update_mo = 9
 
-@BS.scheduled_job('cron',day_of_week='mon-fri',hour=18,minute=30,id='run_lhb')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=18,minute=30,id='run_lhb')
 def run_lhb():
     # global status_update_lhb
     try:
@@ -108,7 +108,7 @@ def run_lhb():
         print("LHB:",e)
         # status_update_lhb = 9
 
-@BS.scheduled_job('cron',day_of_week='mon-fri',hour=19,minute=00,id='run_blocktrade')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=19,minute=00,id='run_blocktrade')
 def run_blocktrade():
     # global status_update_bloktrade
     list_date = [datetime.date.today()]
@@ -119,7 +119,7 @@ def run_blocktrade():
         print("blocktrade:",e)
         # status_update_bloktrade = 9
 
-@BS.scheduled_job('cron',day_of_week='mon-fri',hour=18,minute=00,id='run_spo')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=18,minute=00,id='run_spo')
 def run_spo():
     # global status_update_spo
     try:
@@ -129,14 +129,14 @@ def run_spo():
         print("spo:",e)
         # status_update_spo = 9
 
-@BS.scheduled_job('cron',day_of_week='mon-fri',hour=15,minute=15,id='run_tick')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=15,minute=15,id='run_tick')
 def run_tick():
     try:
         update_tick(500)
     except Exception as e:
         print("Tick:",e)
 
-@BS.scheduled_job('cron',day_of_week='mon-fri',hour=16,minute=30,id='run_caldatas')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=16,minute=30,id='run_caldatas')
 def run_caldatas():
     # global status_caldatas
     try:
@@ -146,7 +146,7 @@ def run_caldatas():
         print("caldatas:",e)
         # status_caldatas = 9
 
-@BS.scheduled_job('cron',day_of_week='mon-fri',hour=16,minute=00,id='run_dayline')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=16,minute=00,id='run_dayline')
 def run_dayline():
     # global status_update_dayline
     try:
@@ -162,7 +162,7 @@ def run_dayline():
         #  send email to kplam@qq.com
         # status_update_dayline = 9
 
-@BS.scheduled_job('cron',day_of_week='mon-fri',hour=15,minute=30,id='run_ftsplit')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=15,minute=30,id='run_ftsplit')
 def run_ftsplit():
     # global status_update_ftsplit
     try:
@@ -172,7 +172,7 @@ def run_ftsplit():
         print("ftsplit:",e)
         # status_update_ftsplit = 9
 
-@BS.scheduled_job('cron',day_of_week='mon-fri',hour=15,minute=15,id='run_unusual')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=15,minute=15,id='run_unusual')
 def run_unusual():
     # global status_save_unusual
     try:

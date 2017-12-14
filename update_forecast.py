@@ -7,7 +7,7 @@ Created on 15:20:00 2017-12-01
 import datetime,re
 import pandas as pd
 from kpfunc.getdata import localconn,serverconn,get_stocklist
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.function import path
 
 def get_forecast(conn=localconn(),proxy=0,lastday=0,update=1):
@@ -20,7 +20,7 @@ def get_forecast(conn=localconn(),proxy=0,lastday=0,update=1):
     """
     errorList=[]
     today = datetime.date.today()-datetime.timedelta(days=lastday)
-    print(today)
+    print("FORECAST:",today)
     iyear =int(str(today)[0:4])
     imonth= int(str(today)[5:7])
     List_stock = get_stocklist()
@@ -40,9 +40,9 @@ def get_forecast(conn=localconn(),proxy=0,lastday=0,update=1):
         content = "error!"
         times_retry = 3
         while content =="error!" and times_retry!=0:
-            content = spyder(url,proxy=proxy).content.decode('utf-8')
+            content = myspyder(url,proxy=proxy).content.decode('utf-8')
             times_retry -= 1
-        print(Quarter, "数据抓取完毕，正在对数据进行处理...")
+        print("FORECAST:",Quarter,"数据抓取完毕，正在对数据进行处理...")
         try:
             return_list = re.findall("\"(.*?)\"", content)
             fctable = []
@@ -58,7 +58,7 @@ def get_forecast(conn=localconn(),proxy=0,lastday=0,update=1):
             errorList.append(e)
     df_forecast['date'] = df_forecast['date'].astype('datetime64', error='ignore')
     df_forecast['财报日期'] = df_forecast['财报日期'].astype('datetime64', error='ignore')
-    print("数据处理完毕，正在更新数据库...")
+    print("FORECAST: 数据处理完毕，正在更新数据库...")
     if update == 1:
         df_forecast = df_forecast[df_forecast['date']>=today]
     else:
@@ -81,7 +81,7 @@ def get_forecast(conn=localconn(),proxy=0,lastday=0,update=1):
             errorList.append(e)
     dfErrorList = pd.DataFrame({'error': errorList})
     dfErrorList.to_csv(path() + '/error/update_forecast.csv')
-    print("更新数据库完毕!")
+    print("FORECAST: 更新数据库完毕!")
     return dfErrorList
 if __name__=="__main__":
     get_forecast()

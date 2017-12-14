@@ -6,7 +6,7 @@ Created on 15:20:00 2017-11-22
 """
 from kpfunc.getdata import localconn,serverconn,get_df_stocklist
 from bs4 import BeautifulSoup as bs
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.function import txt_pre,path
 from time import sleep
 from random import random
@@ -34,8 +34,8 @@ def update_embasedata(stocklist,ser,proxy):
                                                               0] == "6" else stocklist.get_value(i, '证券代码') + "02"
         sName = stocklist.get_value(i, '证券简称')
         try:
-            Intr = spyder('http://soft-f9.eastmoney.com/soft/gp3.php?code=%s' % (symbol),proxy=proxy).content
-            Conc = spyder('http://soft-f9.eastmoney.com/soft/gp30.php?code=%s' % (symbol),proxy=proxy).content
+            Intr = myspyder('http://soft-f9.eastmoney.com/soft/gp3.php?code=%s' % (symbol),proxy=proxy).content
+            Conc = myspyder('http://soft-f9.eastmoney.com/soft/gp30.php?code=%s' % (symbol),proxy=proxy).content
             IntrSoup = bs(Intr, 'html5lib')
             ConcSoup = bs(Conc, 'html5lib')
             stockdata = []
@@ -47,7 +47,7 @@ def update_embasedata(stocklist,ser,proxy):
             del point['style']
             stockdata.append(str(point))
             stockdata.append(symbol)
-            print(symbol[:-2], sName, round(i / (len(stocklist))*100,5))
+            print("BaseData:",symbol[:-2], sName, round(i / (len(stocklist))*100,2))
             cur = conn.cursor()
             cur.execute(sqli, tuple(stockdata))
             conn.commit()

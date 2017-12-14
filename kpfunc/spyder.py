@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup as bs
 import random
 import socket, urllib
 import gevent
+from gevent.pool import Pool
 from gevent import monkey; monkey.patch_all()
 
 def get_ip_list_online():
@@ -44,25 +45,29 @@ def ip_check(*path):
             ip_list.append("http://"+ip)
     iplist_output=[]
     socket.setdefaulttimeout(1)
-    for ip in ip_list:
-        proxy_ip ={'http':ip}#想验证的代理IP
+
+    def check(ip):
+        proxy_ip = {'http': ip}  # 想验证的代理IP
         try:
             proxy_support = urllib.request.ProxyHandler(proxy_ip)
             opener = urllib.request.build_opener(proxy_support)
-            opener.addheaders=[("User-Agent","Mozilla/5.0 (Windows NT 10.0; WOW64)")]
+            opener.addheaders = [("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64)")]
             urllib.request.install_opener(opener)
-            if urllib.request.urlopen(random.choice(url_list)).code==200:
+            if urllib.request.urlopen(random.choice(url_list)).code == 200:
                 iplist_output.append(ip)
-                print(ip,200)
+                print(ip, 200)
         except Exception as e:
             print(e)
+    gpool = Pool(300)
+    tasks = [gpool.spawn(check,ip) for ip in ip_list]
+    gevent.joinall(tasks)
     return iplist_output
 
 def get_proxy():
     iplist=pd.read_csv('ip.csv')['ip'].values
     return iplist
 
-def spyder(url,proxy):
+def myspyder(url,proxy):
     """
     :param url: url
     :param proxy: 0 or 1

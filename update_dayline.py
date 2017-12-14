@@ -4,7 +4,7 @@
 Created on 15:20:00 2017-11-22
 @author: kplam
 """
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.getdata import *
 from kpfunc.function import path
 from time import sleep
@@ -37,7 +37,7 @@ class update_bar:
                 html = "error!"
                 times_retry= 3
                 while html=="error!" and times_retry != 0:
-                    html = spyder(url,proxy=proxy)
+                    html = myspyder(url,proxy=proxy)
                     times_retry -=1
             except:
                 pass

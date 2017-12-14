@@ -5,7 +5,7 @@ Created on 15:20:00 2017-12-06
 
 @author: kplam
 """
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.getdata import localconn,serverconn,get_stocklist_prefix,local2conn
 from kpfunc.function import path
 from time import sleep
@@ -21,7 +21,7 @@ def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1),conn=localconn(),pr
     for code in stocklist:
         print(code)
         try:
-            html = spyder(url+code,proxy=proxy)
+            html = myspyder(url+code,proxy=proxy)
             js = json.loads(html.content)
             with open("./data/mainbusiness/"+code[2:]+".json",'w',encoding='utf-8') as f:
                 f.write(str(html.content,encoding='utf-8'))

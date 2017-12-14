@@ -5,7 +5,7 @@ Created on 15:20:00 2017-12-06
 
 @author: kplam
 """
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.getdata import localconn,serverconn
 from kpfunc.function import path
 from time import sleep
@@ -20,7 +20,7 @@ def notices(page,conn=localconn(),proxy=0):
     print("page:",page)
     try:
         url = "http://data.eastmoney.com/notices/getdata.ashx?FirstNodeType=0&CodeType=1&PageIndex=%s&PageSize=500"%(page)
-        html =spyder(url,proxy=proxy).content
+        html = myspyder(url,proxy=proxy).content
         js =json.loads(html.decode('gbk')[7:-1])['data']
         table=pd.DataFrame()
         for i in range(len(js)):

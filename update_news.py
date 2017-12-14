@@ -6,20 +6,21 @@ Created on Fri Nov 10 15:20:00 2017
 @author: kplam
 """
 from kpfunc.getdata import localconn
-from kpfunc.spyder import *
+from kpfunc.spyder import myspyder
 from kpfunc.function import path
 from random import random
 from time import sleep
+from bs4 import BeautifulSoup as bs
+import pandas as pd
 
 def get_news(url,proxy):
-    print(url)
-    source ='stcn.com'
-    html="error!"
-    times_retry=3
-    while html=="error!" and times_retry!=0:
-        html = spyder(url,proxy=proxy)
+    source = 'stcn.com'
+    html = "error!"
+    times_retry = 3
+    while html == "error!" and times_retry!=0:
+        html = myspyder(url,proxy=proxy)
         times_retry = times_retry -1
-    html =html.content
+    html = html.content
     # print(news.decode('utf-8'))
     newsSoup = bs(html, 'html.parser')
     newslist = newsSoup.select(".mainlist")

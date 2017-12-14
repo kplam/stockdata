@@ -9,7 +9,7 @@ Created on 15:20:00 2017-12-09
 """
 http://nuyd.eastmoney.com/EM_UBG_PositionChangesInterface/api/js?style=top&js=[(x)]&ac=normal&dtformat=HH:mm:ss
 """
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.function import path
 from kpfunc.getdata import localconn
 import datetime,json,re,gzip
@@ -24,7 +24,7 @@ from collections import Counter
 
 def unusual():
     url = "http://nuyd.eastmoney.com/EM_UBG_PositionChangesInterface/api/js?style=top&js=[(x)]&dtformat=HH:mm:ss&ac=normal"
-    html = spyder(url,0).content.decode('utf-8')
+    html = myspyder(url,0).content.decode('utf-8')
     return html
 def analysis():
     today = datetime.date.today()
@@ -62,7 +62,7 @@ if __name__ == '__main__':
                 concept = re.split(",",concept)
             except:
                 pass
-            self.list =self.list + [ele[1], ele[4]] + subject + concept
+            self.list =self.list + [ele[1]]#, ele[4]] #+ subject + concept
             return None
     tPool=Pool(10)
     st=stocktag()

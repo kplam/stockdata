@@ -5,7 +5,7 @@ Created on 15:20:00 2017-12-01
 @author: kplam
 """
 from kpfunc.getdata import localconn,serverconn,get_stocklist
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.function import getpinyin,path
 import pandas as pd
 import re,datetime
@@ -20,7 +20,7 @@ def update_stocklist(conn=localconn(),proxy=0):
     html = "error!"
     times_retry = 3
     while html == "error!" and times_retry != 0:
-        html = spyder(url=url, proxy=proxy)
+        html = myspyder(url=url, proxy=proxy)
         times_retry -= 1
 
     try:

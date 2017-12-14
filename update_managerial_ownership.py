@@ -5,7 +5,7 @@ Created on 15:20:00 2017-12-07
 
 @author: kplam
 """
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.getdata import localconn,serverconn
 from kpfunc.function import path
 import re,datetime
@@ -23,7 +23,7 @@ def mo(pages,conn=localconn(),proxy=0):
         print("page:",page)
         try:
             url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=GG&sty=GGMX&p=%s&ps=5000"%(page)
-            html = spyder(url,proxy=proxy).content.decode('utf-8')[1:-1]
+            html = myspyder(url,proxy=proxy).content.decode('utf-8')[1:-1]
             sleep(random()/10+3)
             table = re.findall(r'\"([^"]+)\"',html)
             list = [re.split("\,",line) for line in table]

@@ -5,7 +5,7 @@ Created on 15:20:00 2017-12-06
 
 @author: kplam
 """
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.getdata import localconn,serverconn
 from kpfunc.function import path
 from numpy import nan
@@ -16,7 +16,7 @@ def spo(conn=localconn(),proxy=0):
     errorlist=[]
     today=datetime.date.today()
     url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=5000&st=5"
-    html = spyder(url,proxy=proxy).content
+    html = myspyder(url,proxy=proxy).content
     table = eval(html.decode('utf-8'))
     list =[]
     for ele in table:

@@ -9,7 +9,7 @@ import requests as rq
 from bs4 import BeautifulSoup as bs
 import pandas as pd
 from kpfunc.getdata import localconn
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.function import path
 import time,datetime
 import random
@@ -24,7 +24,7 @@ def news_content():
     rqshead = {'User-Agent':'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36'}
     # ===================get news content================ #
 
-    sql_news_null = "SELECT * FROM `news` WHERE `content` IS NULL OR(`title` LIKE '%%更新中%%' and `datetime`>='%s')"%(today)
+    sql_news_null = "SELECT * FROM `news` WHERE `content` IS NULL OR (`title` LIKE '%%更新中%%' and `datetime`>='%s')"%(today)
     df_listurl = pd.read_sql(sql_news_null,conn)
     list_url = df_listurl['link'].values
     errorlist = []
@@ -33,18 +33,18 @@ def news_content():
 
 
     for url in list_url:
-        print(url)
         time.sleep(random.random()/10+3)
         try:
-            html = spyder(url,proxy=0).content
+            html = myspyder(url,proxy=0).content
             newsSoup = bs(html, 'html.parser')
             newsSouptitle = newsSoup.select(".intal_tit")[0].h2.text
+            print(newsSouptitle)
             newsSoup = newsSoup.select(".txt_con")[0]
             [s.extract() for s in newsSoup('a')]
             [s.extract() for s in newsSoup('script')]
             [s.extract() for s in newsSoup('div')]
             newscontent = str(newsSoup)
-            # print(newscontent)
+            print(newsSoup.text)
             sql_update_newscontent ="update `news` set `content`='%s',`title`='%s'WHERE `link`='%s'"%(newscontent,newsSouptitle,url)
             cur=conn.cursor()
             cur.execute(sql_update_newscontent)

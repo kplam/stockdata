@@ -5,7 +5,7 @@ Created on 15:20:00 2017-11-22
 
 @author: kplam
 """
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 from kpfunc.getdata import localconn,serverconn
 from time import sleep
 from random import random
@@ -16,15 +16,15 @@ import json,re
 
 def get_lhblist(date,proxy):
     url_sh="http://stock.jrj.com.cn/action/lhb/getHsTodaylhb.jspa?vname=list&date=%s&dateType=2&order=desc&sort=netvalue_value&psize=2000"%(date)
-    html_sh = spyder(url_sh,proxy=proxy).content.decode('utf-8')#[9:-3]
+    html_sh = myspyder(url_sh,proxy=proxy).content.decode('utf-8')#[9:-3]
     url_sz ="http://stock.jrj.com.cn/action/lhb/getHsTodaylhb.jspa?vname=list&date=%s&dateType=1&order=desc&sort=netvalue_value&psize=2000"%(date)
-    html_sz = spyder(url_sz,proxy=proxy).content.decode('utf-8')#[9:-3]
+    html_sz = myspyder(url_sz,proxy=proxy).content.decode('utf-8')#[9:-3]
     lhblist = list(set(re.findall('\d{6}',html_sh)+re.findall('\d{6}',html_sz)))
     return lhblist
 
 def get_lhbdetail(code,date,proxy):
     url = "http://stock.jrj.com.cn/action/lhb/getStockLhbDetatil.jspa?vname=detailInfo&stockcode=%s&date=%s"%(code,date)
-    html = spyder(url,proxy=proxy).content.decode('utf-8')
+    html = myspyder(url,proxy=proxy).content.decode('utf-8')
     html = re.split("\;",html)
     json_detail = html[0][15:]
     j=1

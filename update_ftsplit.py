@@ -7,16 +7,16 @@ Created on 15:20:00 2017-11-22
 import re
 import datetime
 from kpfunc.getdata import *
-from kpfunc.spyder import spyder
+from kpfunc.spyder import myspyder
 
-def split_sz(Quarter,iLong,proxy): # 送转
+def split_sz(Quarter,iLong,proxy=0,conn=localconn()): # 送转
     sztable = []
     List_Fin_SZ = []
     sz_url = 'http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=SZBL&fd=%s&st=2&sr=true&p=1&ps=%s'%(Quarter,iLong)
     get_url= "error!"
     times_retry = 10
     while get_url == "error!" and times_retry != 0:
-        get_url = spyder(sz_url,proxy)
+        get_url = myspyder(sz_url,proxy)
         times_retry = times_retry -1
     if get_url != "error!":
         try:
@@ -61,20 +61,19 @@ def split_sz(Quarter,iLong,proxy): # 送转
     List_Fin_SZ = pd.DataFrame(List_Fin_SZ, columns=['symbol', 'sz_cal', 'xj_cal', 'date'])
     return List_Fin_SZ
 
-def split_xj(Quarter,iLong,proxy): # 现金分红
+def split_xj(Quarter,iLong,proxy=0,conn=localconn()): # 现金分红
     xj_url = 'http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=FHBL&fd=%s&st=2&sr=true&p=1&ps=%s'%(Quarter,iLong)
     get_url = "error!"
     times_retry = 10
     xjtable = []
     List_Fin_xj = []
     while get_url == "error!" and times_retry != 0:
-        get_url = spyder(xj_url, proxy)
+        get_url = myspyder(xj_url, proxy)
         times_retry = times_retry - 1
-    print(get_url.url)
     if get_url != "error!":
         try:
             return_list = re.findall("\"(.*?)\"",get_url.text)
-
+            # print(return_list)
             for j in range(len(return_list)):
                 appd = re.split(",",return_list[j])
                 xjtable.append(appd)
@@ -83,11 +82,9 @@ def split_xj(Quarter,iLong,proxy): # 现金分红
                                                   '分红比例（10送）','股息率','每股收益(元)','每股未分配利润(元)',
                                                   '上期每股未分配利润(元)','股权登记日','公告日','财报'])
             xjlist = xjlist[['股票代码','送转比例','分红比例（10送）','股权登记日']]
-
             for k in range(len(xjlist)):
                 symbol = xjlist.get_value(k,'股票代码')
                 bookindate =xjlist.get_value(k,'股权登记日')
-
                 if bookindate !='':
                     sqli= "SELECT * FROM `dayline` WHERE `date` > '%s' ORDER BY `date` ASC Limit 0,1" % (bookindate)
                     checkdate =pd.read_sql(sqli,conn)
@@ -121,7 +118,7 @@ def split_pg(proxy):  # 配股
     pgtable = []
     List_Fin_pg =pd.DataFrame()
     while get_url == "error!" and times_retry != 0:
-        get_url = spyder(pg_url, proxy)
+        get_url = myspyder(pg_url, proxy)
         times_retry = times_retry - 1
     if get_url !="error!":
         try:
@@ -163,11 +160,10 @@ def ftsplit():
     while df_ftsplit.empty == True and times_retry!=0:
         print("正在获取分红数据...")
         for Quarter in List_Quarter:
-            df_Fin_SZ = split_sz(Quarter=Quarter,iLong=iLong,proxy=0)
-            df_Fin_xj = split_xj(Quarter=Quarter,iLong=iLong,proxy=0)
+            df_Fin_SZ = split_sz(Quarter=Quarter,iLong=iLong,proxy=0,conn=conn)
+            df_Fin_xj = split_xj(Quarter=Quarter,iLong=iLong,proxy=0,conn=conn)
             df_Fin = pd.concat((df_Fin_SZ, df_Fin_xj)).sort_values('date', ascending=False).drop_duplicates()
             df_ftsplit = pd.concat((df_ftsplit,df_Fin))
-
         df_ftsplit = pd.DataFrame(np.array(df_ftsplit),columns=['code','红股','红利','date'])
         times_retry = times_retry-1
 

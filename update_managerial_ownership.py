@@ -16,7 +16,7 @@ from random import random
 http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=GG&sty=GGMX&p=1&ps=1000
 """
 def mo(pages,conn=localconn(),proxy=0):
-    today = datetime.date.today()
+    today = datetime.date.today()#-datetime.timedelta(days=1)
     error=[]
     df=pd.DataFrame()
     for page in pages:
@@ -36,7 +36,8 @@ def mo(pages,conn=localconn(),proxy=0):
             error.append(page)
     df=df.drop_duplicates()
     df['日期']=df['日期'].astype('datetime64')
-    df=df[df['日期']>=today]
+    df=df[df['日期']==today]
+    print(df)
     df.to_sql('managerial',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
     return error
 

@@ -192,7 +192,7 @@ class calc:
                         jlh_cp = df.get_value(j, 'jlh')
                         kprsi_cp = df.get_value(j, 'kprsi')
                         if close_cp_ref < jshort_cp and close_cp > jshort_cp and close_cp > jlh_cp and close_cp > kprsi_cp:
-                            List_TA_Result.append([symbol, '1'])
+                            List_TA_Result.append(symbol)
 
 
                 # ========= error output ============ #
@@ -207,6 +207,7 @@ class calc:
         result = []
         df_list = calc.adjfactor(self)
         taresultlist = calc.tamodel(self)
+        print(taresultlist)
         print("正在按成交额进行排序...")
         for i in range(len(df_data)):
             code = df_data.get_value(i, 'code')

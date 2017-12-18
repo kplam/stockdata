@@ -13,7 +13,9 @@ from kpfunc.spyder import myspyder
 from kpfunc.function import path
 import time,datetime
 import random
-
+"""
+http://app.stcn.com/?app=article&controller=article&action=fulltext&contentid=
+"""
 def news_content():
     # ===================
     conn=localconn()
@@ -54,6 +56,7 @@ def news_content():
             errorlist.append((url,e))
     df_errorlist = pd.DataFrame(errorlist,columns=['link','error'])
     df_errorlist.to_csv(path()+'/error/update_newscontent.csv')
+    conn.close()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     news_content()

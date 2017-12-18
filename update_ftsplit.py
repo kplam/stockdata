@@ -4,112 +4,37 @@
 Created on 15:20:00 2017-11-22
 @author: kplam
 """
-import re
+"""
+http://dcfm.eastmoney.com/EM_MutiSvcExpandInterface/api/js/get?type=DCSOBS&token=70f12f2f4f091e459a279469fe49eca5&p=1&ps=5000&sr=-1&st=SZZBL&filter=(ReportingPeriod=^2017-06-30^)&cmd=
+"""
 import datetime
 from kpfunc.getdata import *
 from kpfunc.spyder import myspyder
 
-def split_sz(Quarter,iLong,proxy=0,conn=localconn()): # 送转
-    sztable = []
-    List_Fin_SZ = []
-    sz_url = 'http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=SZBL&fd=%s&st=2&sr=true&p=1&ps=%s'%(Quarter,iLong)
-    get_url= "error!"
-    times_retry = 10
-    while get_url == "error!" and times_retry != 0:
-        get_url = myspyder(sz_url,proxy)
-        times_retry = times_retry -1
-    if get_url != "error!":
-        try:
-            return_list = re.findall("\"(.*?)\"", get_url.text)
-            for j in range(len(return_list)):
-                appd = re.split(",", return_list[j])
-                sztable.append(appd)
+def split_szfh(iLong,Quarter,proxy=0):
+    today = datetime.date.today()
+    try:
+        url = "http://dcfm.eastmoney.com/EM_MutiSvcExpandInterface/api/js/get?type=DCSOBS&token=70f12f2f4f091e459a279469fe49eca5&p=1&ps=%s&sr=-1&st=SZZBL&filter=(ReportingPeriod=^%s^)" % (
+        iLong, Quarter)
+        html = myspyder(url, proxy=0).content.decode('utf-8')
+        if html != "[]":
+            table = pd.read_json(html, dtype='object')
+            table = pd.DataFrame(np.array(table),
+                                 columns=['分红计划', 'date', '除权除息日后30日涨幅', 'code', '每股收益', '股权登记日', '股权登记日前10日涨幅', '股息率',
+                                          '净利润同比增长', '每股公积金', '每股未分配利润', '市场', '证券名称', '每股净资产', '方案进度', '报表日期',
+                                          '业绩被披露日期', '送股比例', '红股', '总股本', '红利', '预案公告日', '预案公告日后10日涨幅', '已除权天数',
+                                          '转股比例'])
+            table = table[['date', 'code', '红股', '红利']]
+            table = table[table['date'] != '-']
+            table['date'] = table['date'].astype('datetime64[ns]')
+            table = table[table['date'] == today]
+            return table
+        else:
+            return pd.DataFrame()
+    except Exception as e:
+        print(e)
+        return pd.DataFrame()
 
-            szlist = pd.DataFrame(sztable, columns=['股票代码', '股票简称', '利润分配', '送转比例', '现金分红', '每股收益(元)',
-                                                    '每股未分配利润(元)', '每股未分配利润(元)', '上期每股未分配利润(元)',
-                                                    '上期每股资本公积金(元)', '股权登记日', '公告日期', '财报'])
-            szlist = szlist[['股票代码', '送转比例', '现金分红', '股权登记日']]
-
-            for k in range(len(szlist)):
-                symbol = szlist.get_value(k, '股票代码')
-                bookindate = szlist.get_value(k, '股权登记日')
-                if bookindate != '':
-                    sqli = "SELECT * FROM `dayline` WHERE `date` > '%s' ORDER BY `date` ASC Limit 0,1" % (bookindate)
-                    checkdate = pd.read_sql(sqli,conn)
-                    if checkdate.empty == False:
-                        split_date = checkdate.get_value(0, 'date')
-                        sz = szlist.get_value(k, '送转比例')
-                        xj = szlist.get_value(k, '现金分红')
-                        sz_spl = re.split(u"([\u4e00-\u9fff]+)", sz)
-                        xj_spl = re.split(u"([\u4e00-\u9fff]+)", xj)
-                        sz_calA = float(sz_spl[2])
-                        if len(sz_spl) > 1:
-                            if len(sz_spl) > 4:
-                                sz_calB = float(sz_spl[4])
-                            else:
-                                sz_calB = 0
-                            sz_cal = sz_calA + sz_calB
-                        else:
-                            sz_cal = 0
-                        if len(xj_spl) > 2:
-                            xj_cal = float(xj_spl[2])
-                        else:
-                            xj_cal = 0
-                        List_Fin_SZ.append([symbol, sz_cal, xj_cal, split_date])
-        except:
-            pass
-    List_Fin_SZ = pd.DataFrame(List_Fin_SZ, columns=['symbol', 'sz_cal', 'xj_cal', 'date'])
-    return List_Fin_SZ
-
-def split_xj(Quarter,iLong,proxy=0,conn=localconn()): # 现金分红
-    xj_url = 'http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=FHBL&fd=%s&st=2&sr=true&p=1&ps=%s'%(Quarter,iLong)
-    get_url = "error!"
-    times_retry = 10
-    xjtable = []
-    List_Fin_xj = []
-    while get_url == "error!" and times_retry != 0:
-        get_url = myspyder(xj_url, proxy)
-        times_retry = times_retry - 1
-    if get_url != "error!":
-        try:
-            return_list = re.findall("\"(.*?)\"",get_url.text)
-            # print(return_list)
-            for j in range(len(return_list)):
-                appd = re.split(",",return_list[j])
-                xjtable.append(appd)
-
-            xjlist = pd.DataFrame(xjtable, columns=['股票代码','股票简称','利润分配','送转比例','现金分红','现金分红总额(万元)',
-                                                  '分红比例（10送）','股息率','每股收益(元)','每股未分配利润(元)',
-                                                  '上期每股未分配利润(元)','股权登记日','公告日','财报'])
-            xjlist = xjlist[['股票代码','送转比例','分红比例（10送）','股权登记日']]
-            for k in range(len(xjlist)):
-                symbol = xjlist.get_value(k,'股票代码')
-                bookindate =xjlist.get_value(k,'股权登记日')
-                if bookindate !='':
-                    sqli= "SELECT * FROM `dayline` WHERE `date` > '%s' ORDER BY `date` ASC Limit 0,1" % (bookindate)
-                    checkdate =pd.read_sql(sqli,conn)
-                    if checkdate.empty == False:
-                        split_date = checkdate.get_value(0,'date')
-                        sz = xjlist.get_value(k,'送转比例')
-                        xj = xjlist.get_value(k,'分红比例（10送）')
-                        sz_spl = re.split(u"([\u4e00-\u9fff]+)" ,sz)
-                        xj_spl = re.split(u"([\u4e00-\u9fff]+)" ,xj)
-
-                        if len(sz_spl)>1:
-                            sz_calA = float(sz_spl[2])
-                            if len(sz_spl)>4:
-                                sz_calB = float(sz_spl[4])
-                            else:
-                                sz_calB = 0
-                            sz_cal = sz_calA+sz_calB
-                        else:
-                            sz_cal = 0
-                        xj_cal = float(xj_spl[0])
-                        List_Fin_xj.append((symbol,sz_cal,xj_cal,split_date))
-        except:
-            pass
-    List_Fin_xj = pd.DataFrame(List_Fin_xj,columns=['symbol','sz_cal','xj_cal','date'])
-    return List_Fin_xj
 
 def split_pg(proxy):  # 配股
     pg_url = 'http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=NS&sty=NSA&st=6&sr=true&p=1&ps=5000'
@@ -160,22 +85,18 @@ def ftsplit():
     while df_ftsplit.empty == True and times_retry!=0:
         print("正在获取分红数据...")
         for Quarter in List_Quarter:
-            df_Fin_SZ = split_sz(Quarter=Quarter,iLong=iLong,proxy=0,conn=conn)
-            df_Fin_xj = split_xj(Quarter=Quarter,iLong=iLong,proxy=0,conn=conn)
-            df_Fin = pd.concat((df_Fin_SZ, df_Fin_xj)).sort_values('date', ascending=False).drop_duplicates()
+            df_Fin = split_szfh(Quarter=Quarter,iLong=iLong,proxy=0)
             df_ftsplit = pd.concat((df_ftsplit,df_Fin))
         df_ftsplit = pd.DataFrame(np.array(df_ftsplit),columns=['code','红股','红利','date'])
         times_retry = times_retry-1
-
-    df_sqlupdate = df_ftsplit[df_ftsplit['date']==today]
-
-    if df_sqlupdate.empty != True:
-        df_sqlupdate = df_sqlupdate.reset_index(range(len(df_sqlupdate)), drop=True)
-        for i in range(len(df_sqlupdate)):
-            code = str(df_sqlupdate.get_value(i,'code'))
-            sz = float(df_sqlupdate.get_value(i,'红股'))
-            xj = float(df_sqlupdate.get_value(i,'红利'))
-            sdate = str(df_sqlupdate.get_value(i,'date'))
+    print(df_ftsplit)
+    if df_ftsplit.empty != True:
+        df_ftsplit = df_ftsplit.reset_index(range(len(df_ftsplit)), drop=True)
+        for i in range(len(df_ftsplit)):
+            code = str(df_ftsplit.get_value(i,'code'))
+            sz = float(df_ftsplit.get_value(i,'红股'))
+            xj = float(df_ftsplit.get_value(i,'红利'))
+            sdate = str(df_ftsplit.get_value(i,'date'))
             sql_param=(code,sz,xj,sdate)
             sql_update = "INSERT IGNORE INTO `ftsplit`(`code`, `红股`, `红利`,`date`) VALUES (%s,%s,%s,%s)"
             cur = conn.cursor()
@@ -212,5 +133,5 @@ def ftsplit():
         print("没有可更新的配股信息!")
     return 1
 
-if __name__ == "__main__":
+if __name__ == '__main__' :
     ftsplit()

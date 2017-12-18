@@ -118,3 +118,6 @@ tmp04.py
 tmp05.py
 *.jz
 cloud_large.png
+tmp06.py
+*.xlsx
+sync.py

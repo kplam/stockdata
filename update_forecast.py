@@ -82,6 +82,7 @@ def get_forecast(conn=localconn(),proxy=0,lastday=0,update=1):
     dfErrorList = pd.DataFrame({'error': errorList})
     dfErrorList.to_csv(path() + '/error/update_forecast.csv')
     print("FORECAST: 更新数据库完毕!")
+    conn.close()
     return dfErrorList
 if __name__=="__main__":
     get_forecast()

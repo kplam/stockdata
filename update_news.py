@@ -73,6 +73,7 @@ def stcn_news():
             errorlist.append(e)
     dfErrorList = pd.DataFrame(errorlist)
     dfErrorList.to_csv(path()+'/error/update_news.csv')
+    conn.close()
 
 if __name__ == "__main__":
     stcn_news()

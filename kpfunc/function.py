@@ -7,6 +7,7 @@ Created on 15:20:00 2017-11-22
 """
 
 import os,sys,time
+import codecs
 
 def is_valid_date(str):
   '''判断是否是一个有效的日期字符串'''
@@ -150,7 +151,7 @@ def gbk_to_utf8(filepath='./data/dzhdata/'):
     for file in files:
         print(file)
         try:
-            global content
+            # global content
             f = open(file,'r',encoding='gbk')
             content= f.read()
             f2 =open(file,'w',encoding='utf-8')
@@ -158,9 +159,25 @@ def gbk_to_utf8(filepath='./data/dzhdata/'):
             f2.close()
         except Exception as e:
             print(e)
+# def delBom(filepath='./data/dzhdata/'):
+#     files = GetFileList(filepath)
+#     for file in files:
+#         print(file)
+#         try:
+#             f =open(file,'rb')
+#             data= f.read()
+#             print(data[:6])
+#             if data[:3] == b'\xef\xbb\xbf':
+#                 print(True)
+#                 data = data[3:]
+#                 print(data[:6])
+#                 f2 =open(file,'wb')
+#                 f2.write(data)
+#                 f2.close()
+#         except Exception as e:
+#             print(e)
 
 
 if __name__ == "__main__":
-
     print("Content-type:text/html\n\n")
     print("error!")

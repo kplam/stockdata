@@ -5,9 +5,9 @@ Created on 15:20:00 2017-12-10
 
 @author: kplam
 """
-
+from memory_profiler import profile
 from apscheduler.schedulers.blocking import BlockingScheduler
-import datetime,time,warnings
+import datetime,time,warnings,gc
 from kpfunc.getdata import localconn
 import pandas as pd
 from update_news import stcn_news
@@ -38,30 +38,39 @@ BS = BlockingScheduler()
 # status_update_stocklist = 0
 # status_update_basedata = 1
 # status_update_mo = 0
-
+@profile
 @BS.scheduled_job('interval', max_instances=10, minutes=1, id='run_news')
 def run_news():
     stcn_news()
+    gc.collect()
 
+@profile
 @BS.scheduled_job('interval', max_instances=10, minutes=1, id='run_newscontent')
 def run_newscontent():
     news_content()
+    gc.collect()
 
+@profile
 @BS.scheduled_job('interval', max_instances=10, hours=2, id='run_forecast')
 def run_forecast():
     print("Forecast...")
     get_forecast()
+    gc.collect()
 
+
+@profile
 @BS.scheduled_job('interval', max_instances=10, hours=3,id='run_notices')
 def run_notices():
-    pages = range(1, 3)[::-1]
+    pages = range(1, 2)[::-1]
     times_retry = 3
     while len(pages) != 0 and times_retry != 0:
         pages = [notices(page) for page in pages]
         pages = list(set(pages))
         pages.remove(None)
         times_retry -= 1
+    gc.collect()
 
+@profile
 @BS.scheduled_job('interval', max_instances=10, hours=8,id='run_notices')
 def run_basedata():
     # global status_update_basedata
@@ -76,7 +85,9 @@ def run_basedata():
     except Exception as e:
         print("Basedata:",e)
         # status_update_basedata = 9
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, hour=20,id='run_stocklist')
 def run_stocklist():
     # global status_update_stocklist
@@ -86,7 +97,9 @@ def run_stocklist():
     except Exception as e:
         print("Stocklist:",e)
         # status_update_stocklist = 9
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, hour=20,id='run_mo')
 def run_mo():
     # global status_update_mo
@@ -97,7 +110,9 @@ def run_mo():
     except Exception as e:
         print("MO:",e)
         # status_update_mo = 9
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=18,minute=30,id='run_lhb')
 def run_lhb():
     # global status_update_lhb
@@ -107,7 +122,9 @@ def run_lhb():
     except Exception as e:
         print("LHB:",e)
         # status_update_lhb = 9
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=19,minute=00,id='run_blocktrade')
 def run_blocktrade():
     # global status_update_bloktrade
@@ -118,7 +135,9 @@ def run_blocktrade():
     except Exception as e:
         print("blocktrade:",e)
         # status_update_bloktrade = 9
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=18,minute=00,id='run_spo')
 def run_spo():
     # global status_update_spo
@@ -128,14 +147,18 @@ def run_spo():
     except Exception as e:
         print("spo:",e)
         # status_update_spo = 9
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=15,minute=15,id='run_tick')
 def run_tick():
     try:
         update_tick(500)
     except Exception as e:
         print("Tick:",e)
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=16,minute=30,id='run_caldatas')
 def run_caldatas():
     # global status_caldatas
@@ -145,7 +168,9 @@ def run_caldatas():
     except Exception as e:
         print("caldatas:",e)
         # status_caldatas = 9
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=16,minute=00,id='run_dayline')
 def run_dayline():
     # global status_update_dayline
@@ -161,7 +186,9 @@ def run_dayline():
         print("Dayline:",e)
         #  send email to kplam@qq.com
         # status_update_dayline = 9
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=15,minute=30,id='run_ftsplit')
 def run_ftsplit():
     # global status_update_ftsplit
@@ -171,7 +198,9 @@ def run_ftsplit():
     except Exception as e:
         print("ftsplit:",e)
         # status_update_ftsplit = 9
+    gc.collect()
 
+@profile
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=15,minute=15,id='run_unusual')
 def run_unusual():
     # global status_save_unusual
@@ -181,7 +210,7 @@ def run_unusual():
     except Exception as e:
         print("unusual:",e)
         # status_save_unusual = 9
-
+    gc.collect()
 
 if __name__ == '__main__':
     warnings.filterwarnings('ignore')

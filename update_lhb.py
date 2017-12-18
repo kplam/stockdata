@@ -66,6 +66,7 @@ def lhb():
         df_lhbdetail.to_sql('lhb',localconn(),flavor='mysql',schema='stockdata',if_exists='append',index=True,chunksize=10000)
     df_error = pd.DataFrame(errorlist)
     df_error.to_csv('./data/lhb/error.csv')
+    localconn().close()
 
 if __name__ == "__main__" :
     lhb()

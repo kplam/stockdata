@@ -8,7 +8,7 @@ Created on 15:20:00 2017-11-22
 from kpfunc.getdata import get_stocklist_prefix,localconn
 from kpfunc.spyder import myspyder
 from random import random
-import time
+import time,warnings
 import pandas as pd
 from bs4 import BeautifulSoup as bs
 import numpy as np
@@ -126,28 +126,34 @@ def get_single_shareholder_data(code,proxy=1):
                 cur.execute(sql_gp50,sql_gp50_param)
                 conn.commit()
         f500.close()
-        time.sleep(random()/10+1)
+        # time.sleep(random()/10+1)
         return None
     except Exception as e:
         print(code[0:6],e)
         return code
 
 def get_shareholder_data():
-    monkey.patch_all()
+    # monkey.patch_all()
     stocklist = get_stocklist_prefix("01","02",0)
-    gpool=Pool(300)
-    tasks=[]
+    # gpool=Pool(5000)
+    errorlist=[]
     for code in stocklist:
-        tasks.append(gpool.spawn(get_single_shareholder_data(code,proxy=0)))
-    gevent.joinall(tasks)
-    return [task.value for task in tasks].remove(None)
+        try:
+            get_single_shareholder_data(code,proxy=0)
+        except Exception as e:
+            print(e)
+            errorlist.append(code)
+        # tasks.append(gpool.spawn(get_single_shareholder_data(code,proxy=0)))
+    # gevent.joinall(tasks)
+    return errorlist #[task.value for task in tasks].remove(None)
 
 if __name__ == '__main__':
     # from ip import checkip
     # checkip()
+    warnings.filterwarnings('ignore')
     stocklist = get_shareholder_data()
-    # times_retry=3
-    # while len(stocklist) != 0 and times_retry != 0:
-    #     stocklist = get_shareholder_data()
-    #     times_retry -= 1
+    times_retry=3
+    while len(stocklist) != 0 and times_retry != 0:
+        stocklist = get_shareholder_data()
+        times_retry -= 1
 

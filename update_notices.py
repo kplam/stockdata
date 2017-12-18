@@ -19,8 +19,9 @@ def notices(page,conn=localconn(),proxy=0):
     sleep(random()/10*2+0.5)
     print("page:",page)
     try:
-        url = "http://data.eastmoney.com/notices/getdata.ashx?FirstNodeType=0&CodeType=1&PageIndex=%s&PageSize=500"%(page)
+        url = "http://data.eastmoney.com/notices/getdata.ashx?FirstNodeType=0&CodeType=1&PageIndex=%s&PageSize=5000"%(page)
         html = myspyder(url,proxy=proxy).content
+        print(html)
         js =json.loads(html.decode('gbk')[7:-1])['data']
         table=pd.DataFrame()
         for i in range(len(js)):
@@ -52,13 +53,14 @@ def notices(page,conn=localconn(),proxy=0):
             cur = conn.cursor()
             cur.execute(sql_updae,tuple(param))
             conn.commit()
+        conn.close()
         # return None
     except Exception as e:
         print(e)
         return page
 
 if __name__ =="__main__":
-    pages = range(1,3)[::-1]
+    pages = range(1,2)[::-1]
     times_retry = 3
     while len(pages) != 0 and times_retry != 0 :
         pages = [notices(page) for page in pages]

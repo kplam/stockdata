@@ -47,12 +47,12 @@ def update_stocklist(conn=localconn(),proxy=0):
 
             if code not in stocklist:
                 try:
-                    sql_xg = "INSERT INTO `stocklist`(`证券代码`, `证券简称`, `上市市场`,`拼音缩写`) VALUES ('%s','%s','%s','%s')"
-                    sql_ipo = "update `basedata` set `首发日期`='%s' ,`首发价格`='%s' WHERE `证券代码`='%s'"
+                    sql_xg = "INSERT ignore INTO `stocklist`(`证券代码`, `证券简称`, `上市市场`,`拼音缩写`) VALUES (%s,%s,%s,%s)"
+                    sql_ipo = "update `basedata` set `首发日期`=%s ,`首发价格`=%s WHERE `证券代码`=%s"
                     cur = conn.cursor()
                     cur.execute(sql_xg, (code, name, market, pinyin))
                     conn.commit()
-                    cur.execute(sql_ipo, (ipodate, ipoprice, code))
+                    cur.execute(sql_ipo, (str(ipodate), ipoprice, code))
                     conn.commit()
                     print(code, "：更新成功！")
                 except Exception as e:

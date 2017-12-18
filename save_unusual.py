@@ -71,5 +71,5 @@ if __name__ == '__main__':
     print(st.list)
     counts = Counter(st.list).items()
     print(counts)
-    tags = make_tags(counts, maxsize=100)
+    tags = make_tags(counts, maxsize=50)
     create_tag_image(tags, 'cloud_large.png', size = (1920, 300), fontname ='Yahei',rectangular=False)

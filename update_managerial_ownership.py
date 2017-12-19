@@ -20,7 +20,7 @@ def mo(pages,conn=localconn(),proxy=0):
     error=[]
     df=pd.DataFrame()
     for page in pages:
-        print("page:",page)
+        print("MO:Page:",page)
         try:
             url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=GG&sty=GGMX&p=%s&ps=5000"%(page)
             html = myspyder(url,proxy=proxy).content.decode('utf-8')[1:-1]

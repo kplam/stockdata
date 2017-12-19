@@ -16,7 +16,7 @@ import numpy as np
 
 class calc:
     def __init__(self,conn='local',length=365):
-        print("正在获取数据...")
+        print("CALC:正在获取数据...")
         self.con = localconn() if conn =='local' else serverconn()
         self.datelist = pd.read_sql("select distinct `date` from `indexdb` ORDER BY `date` DESC limit 0,2",self.con)['date'].values
         self.today,self.lastdate = self.datelist[0],self.datelist[1]
@@ -29,7 +29,7 @@ class calc:
         self.df_ipo = pd.read_sql("select `证券代码`,`首发日期`,`首发价格` from `basedata` WHERE `首发日期` ='%s'"%(self.today),self.con)
 
     def adjfactor(self):
-        print("正在计算涨跌幅...")
+        print("CALC:正在计算涨跌幅...")
         codelist = self.df_dayline['code'].values
         codelist_lastdate = self.df_dayline_lastdate['code'].values
         codelist_ftsplit = self.df_splite['code'].values
@@ -129,7 +129,7 @@ class calc:
         return df_adj
 
     def tamodel(self):
-        print("正在计算技术分析模型...")
+        print("CALC:正在计算技术分析模型...")
         List_TA_Result=[]
         sql_updatedayline = "select * from `dayline` WHERE `date`='%s'"%(self.today)
         sql_updateftsplit = "select * from `ftsplit` WHERE `date`='%s'"%(self.today)
@@ -207,8 +207,8 @@ class calc:
         result = []
         df_list = calc.adjfactor(self)
         taresultlist = calc.tamodel(self)
-        print(taresultlist)
-        print("正在按成交额进行排序...")
+        # print(taresultlist)
+        print("CALC:正在按成交额进行排序...")
         for i in range(len(df_data)):
             code = df_data.get_value(i, 'code')
             date = df_data.get_value(i, 'date')
@@ -225,7 +225,7 @@ class calc:
             taresult = '1' if code in taresultlist else '0'
             result.append([code, date, fAmorank, ARaise,percentage,taresult])
         result=pd.DataFrame(result,columns=['code','date','AmoRank','ARaise','precentage','taresult'])
-        print("正在将成交量信息写入数据库")
+        print("CALC:正在将成交量信息写入数据库...")
         errorlist = []
         try:
             result.to_sql('usefuldata',self.con,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)

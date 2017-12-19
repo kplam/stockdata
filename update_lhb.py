@@ -43,6 +43,7 @@ def get_lhbdetail(code,date,proxy):
 def lhb():
     # sql_date = "select distinct `date` from `indexdb` WHERE `date`>='2017-01-01' ORDER BY `date` ASC "
     # list_date = pd.read_sql(sql_date,localconn())['date'].values
+    print("LHB:正在获取成交回报信息...")
     today =datetime.date.today()
     list_date=[today]
     errorlist =[]
@@ -60,12 +61,13 @@ def lhb():
                 df_lhbdetail = pd.concat((tmp_lhbdetail,df_lhbdetail))
                 sleep(random()/10+1)
         except Exception as e:
-            print(str(date),e)
+            print("LHB:",str(date),e)
             errorlist.append((str(date),code,e))
         df_lhbdetail.to_csv('./data/lhb/'+str(date)+'.csv',encoding='utf-8')
         df_lhbdetail.to_sql('lhb',localconn(),flavor='mysql',schema='stockdata',if_exists='append',index=True,chunksize=10000)
     df_error = pd.DataFrame(errorlist)
     df_error.to_csv('./data/lhb/error.csv')
+    print("LHB:更新完毕！")
     localconn().close()
 
 if __name__ == "__main__" :

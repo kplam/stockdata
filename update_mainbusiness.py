@@ -19,7 +19,7 @@ def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1),conn=localconn(),pr
     url = "http://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/BusinessAnalysisAjax?code="
     errorlist =[]
     for code in stocklist:
-        print(code)
+        print("MAINBUSINESS:",code)
         try:
             html = myspyder(url+code,proxy=proxy)
             js = json.loads(html.content)
@@ -58,7 +58,7 @@ def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1),conn=localconn(),pr
             # print(df)
             df.to_sql('mainbusiness',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
         except Exception as e:
-            print(e)
+            print("MAINBUSINESS:",e)
             errorlist.append(code)
         sleep(random()/10+1)
     return errorlist

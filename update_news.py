@@ -12,6 +12,7 @@ from random import random
 from time import sleep
 from bs4 import BeautifulSoup as bs
 import pandas as pd
+import datetime
 
 def get_news(url,proxy):
     source = 'stcn.com'
@@ -40,8 +41,13 @@ def get_news(url,proxy):
     return result
 
 def stcn_news():
+    import datetime
     # ===================
+    lastday= datetime.date.today()-datetime.timedelta(days=2)
     conn=localconn()
+    #读取最近两天地址，以减少写入次数
+    sql_check ="select `link` from `news` where `datetime`>='%s'"%(lastday)
+    linklist=pd.read_sql(sql_check,localconn())['link'].values
     # ================================================= #
     pages =range(1,2)
     url= "http://kuaixun.stcn.com/index_%s.shtml"
@@ -64,10 +70,13 @@ def stcn_news():
             title=newsresult.get_value(j,'title')
             link = newsresult.get_value(j,'link')
             datetime =newsresult.get_value(j,'datetime')
-            sql_update= "insert ignore INTO `news`(`source`, `type`, `title`, `link`, `datetime`) VALUES ('%s','%s','%s','%s','%s')"%(source,stype,title,link,datetime)
-            cur = conn.cursor()
-            cur.execute(sql_update)
-            conn.commit()
+            if link not in linklist:
+                sql_update= "insert ignore INTO `news`(`source`, `type`, `title`, `link`, `datetime`) VALUES ('%s','%s','%s','%s','%s')"%(source,stype,title,link,datetime)
+                cur = conn.cursor()
+                cur.execute(sql_update)
+                conn.commit()
+            else:
+                pass
         except Exception as e:
             print(e)
             errorlist.append(e)

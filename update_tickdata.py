@@ -30,11 +30,13 @@ def get_tick_detail(code):
 
 
 def update_tick(poolnum=500):
+    print("TICK:正在更新成交明细...")
     monkey.patch_all()
     gpool = Pool(poolnum)
     stocklist=get_stocklist_prefix('1','2',0)
     tasks = [gpool.spawn(get_tick_detail,code) for code in stocklist]
     gevent.joinall(tasks)
+    print("TICK:更新完成！")
 
 if __name__ == '__main__':
     t=datetime.datetime.today()

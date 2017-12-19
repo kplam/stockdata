@@ -17,11 +17,11 @@ import json
 def notices(page,conn=localconn(),proxy=0):
     today=datetime.date.today() #- datetime.timedelta(days=2)
     sleep(random()/10*2+0.5)
-    print("page:",page)
+    print("NOTICE：page",page)
     try:
-        url = "http://data.eastmoney.com/notices/getdata.ashx?FirstNodeType=0&CodeType=1&PageIndex=%s&PageSize=5000"%(page)
+        url = "http://data.eastmoney.com/notices/getdata.ashx?FirstNodeType=0&CodeType=1&PageIndex=%s&PageSize=1000"%(page)
         html = myspyder(url,proxy=proxy).content
-        print(html)
+        # print(html)
         js =json.loads(html.decode('gbk')[7:-1])['data']
         table=pd.DataFrame()
         for i in range(len(js)):

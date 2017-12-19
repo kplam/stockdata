@@ -13,6 +13,7 @@ import datetime,re
 import pandas as pd
 
 def spo(conn=localconn(),proxy=0):
+    print("SPO: Running...")
     errorlist=[]
     today=datetime.date.today()
     url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=5000&st=5"
@@ -35,8 +36,9 @@ def spo(conn=localconn(),proxy=0):
     try:
         spo.to_sql('spo_done',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
     except Exception as e:
-        print(e)
+        print("SPO:",e)
         errorlist.append(e)
+    print("SPO: Done!")
     return errorlist
 
 """ 

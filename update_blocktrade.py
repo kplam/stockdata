@@ -14,6 +14,7 @@ from random import random
 from numpy import nan
 
 def get_blocktrade(list_date,ser=localconn(),proxy=0):
+    print("BLOCKTRADE:大宗交易信息正在更新...")
     list_date_error=[]
     for date in list_date:
         try:
@@ -34,6 +35,7 @@ def get_blocktrade(list_date,ser=localconn(),proxy=0):
         except Exception as e:
             print(str(date),e)
             list_date_error.append(str(date))
+    print("BLOCKTRADE:更新完毕！")
     return list_date_error
 
 if __name__ == "__main__" :

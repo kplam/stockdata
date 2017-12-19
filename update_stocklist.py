@@ -34,18 +34,19 @@ def update_stocklist(conn=localconn(),proxy=0):
         xg['name'] = xg['name'].astype('str')
         xg['code'] = xg ['code'].astype('str')
         xg = xg.dropna().reset_index(drop=True)
-        print("数据获取成功，正在写入数据库...")
+        print("STOCKLIST:数据获取成功，正在写入数据库...")
 
         stocklist = get_stocklist()
         conn = conn
         Errorlist =[]
+        sql_ipocheck = "select `证券代码` from `basedata` WHERE `首发价格` is NULL"
+        ipocheck = pd.read_sql(sql_ipocheck,conn)['证券代码'].values
         for i in range(len(xg)):
             code, name = xg.get_value(i, 'code'), xg.get_value(i, 'name')
             ipoprice , ipodate = xg.get_value(i, 'ipoprice'), xg.get_value(i, 'ipodate')
             pinyin = getpinyin(name) if '银行' not in name else getpinyin(name).replace('YX','YH')
             market = '上海证券交易所' if code[0] == '6' else '深圳证券交易所'
-
-            if code not in stocklist:
+            if code not in stocklist or code in ipocheck:
                 try:
                     sql_xg = "INSERT ignore INTO `stocklist`(`证券代码`, `证券简称`, `上市市场`,`拼音缩写`) VALUES (%s,%s,%s,%s)"
                     sql_ipo = "update `basedata` set `首发日期`=%s ,`首发价格`=%s WHERE `证券代码`=%s"
@@ -54,13 +55,13 @@ def update_stocklist(conn=localconn(),proxy=0):
                     conn.commit()
                     cur.execute(sql_ipo, (str(ipodate), ipoprice, code))
                     conn.commit()
-                    print(code, "：更新成功！")
+                    print("STOCKLIST:",code, "：更新成功！")
                 except Exception as e:
-                    print(code, "：更新失败！", e)
+                    print("STOCKLIST:",code, "：更新失败！", e)
                     Errorlist.append(code)
 
         output = str(datetime.date.today())+ (" 更新完成！" if len(Errorlist) == 0 else " 更新出错！请检查！")
-        print(output)
+        print("STOCKLIST:",output)
         conn.close()
         return Errorlist
     except:

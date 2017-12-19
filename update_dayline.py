@@ -119,8 +119,8 @@ class update_bar:
 
 if __name__ == '__main__' :
     update_bar(conn=localconn()).update_stock()
-    print("Update stock daybar done!")
+    print("DAYBAR:Update stock daybar done!")
     update_bar(conn=localconn()).update_index()
-    print("Update index daybar done!")
+    print("DAYBAR:Update index daybar done!")
     update_bar(conn=localconn()).update_stock_status()
-    print('Update Stock Status Done!')
+    print("DAYBAR:Update Stock Status Done!")

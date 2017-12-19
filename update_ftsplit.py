@@ -49,7 +49,7 @@ def split_pg(proxy):  # 配股
         try:
             return_list = re.findall("\"(.*?)\"", get_url.text)
 
-            print("配股信息查找完毕，正在写入数据库！")
+            print("FTSPLIT:配股信息查找完毕，正在写入数据库！")
             for i in range(len(return_list)):
                 appd = re.split(",", return_list[i])
                 pgtable.append(appd)
@@ -71,7 +71,7 @@ def ftsplit():
 
     # ============== set Quarter================ #
     today = datetime.date.today()
-    print("今天是",today,".")
+    print("FTSPLIT:今天是",today,".")
     iyear = int(str(today)[0:4])
     imonth = int(str(today)[5:7])
     Q4 = datetime.datetime(iyear-1,12,31).strftime('%Y-%m-%d')
@@ -83,7 +83,7 @@ def ftsplit():
     df_ftsplit = pd.DataFrame()
     times_retry = 3
     while df_ftsplit.empty == True and times_retry!=0:
-        print("正在获取分红数据...")
+        print("FTSPLIT:正在获取分红数据...")
         for Quarter in List_Quarter:
             df_Fin = split_szfh(Quarter=Quarter,iLong=iLong,proxy=0)
             df_ftsplit = pd.concat((df_ftsplit,df_Fin))
@@ -103,13 +103,13 @@ def ftsplit():
             cur.execute(sql_update,sql_param)
             conn.commit()
         conn.close()
-        print("数据写入完毕！")
+        print("FTSPLIT:数据写入完毕！")
     else:
-        print("没有可写入的数据！")
+        print("FTSPLIT:没有可写入的数据！")
 
     # ========== 配股信息 ============ #
     df_pg = pd.DataFrame()
-    print("正在查找配股信息...")
+    print("FTSPLIT:正在查找配股信息...")
     times_retry = 3
     while df_pg.empty ==True and times_retry!=0:
         df_pg = split_pg(proxy=0)
@@ -128,9 +128,9 @@ def ftsplit():
             cur.execute(sql_ftsplitupdate)
             conn.commit()
         conn.close()
-        print("配股信息更新完毕!")
+        print("FTSPLIT:配股信息更新完毕!")
     else:
-        print("没有可更新的配股信息!")
+        print("FTSPLIT:没有可更新的配股信息!")
     return 1
 
 if __name__ == '__main__' :

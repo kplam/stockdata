@@ -46,13 +46,18 @@ def notices(page,conn=localconn(),proxy=0):
                                       'TRADEMARKET':'market','COLUMNNAME':'type'})
         table=table[table['eutime']>=today]
         table.to_csv(path()+'/data/notice/'+str(today)+'.csv',encoding='utf-8')
+        sql_check="select `infocode` from `notice` where `eutime`>'%s'"%(today-datetime.timedelta(days=1))
+        list_infocode=pd.read_sql(sql_check,conn)['infocode'].values
         for line in table.values:
-            sql_updae =" insert ignore into `notice` (`date`, `title`, `infocode`, `eutime`, `url`, `code`, `name`, " \
-                       "`security_type`, `market`, `type`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
             param = [str(ele) for ele in line]
-            cur = conn.cursor()
-            cur.execute(sql_updae,tuple(param))
-            conn.commit()
+            if param[2] not in list_infocode:
+                sql_updae =" insert ignore into `notice` (`date`, `title`, `infocode`, `eutime`, `url`, `code`, `name`, " \
+                           "`security_type`, `market`, `type`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                cur = conn.cursor()
+                cur.execute(sql_updae,tuple(param))
+                conn.commit()
+            else:
+                pass
         conn.close()
         # return None
     except Exception as e:

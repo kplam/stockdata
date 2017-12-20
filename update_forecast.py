@@ -72,10 +72,22 @@ def get_forecast(conn=localconn(),proxy=0,lastday=0,update=1):
             Stype = df_forecast.get_value(j, '预告类型')
             Sprofit = df_forecast.get_value(j, '同期净利润')
             Srepdate = df_forecast.get_value(j, '财报日期')
+            ul = re.split("～", Spercent)
+            if len(ul) == 2:
+                upper = ul[1].replace('%', '')
+                lower = ul[0].replace('%', '')
+            elif len(ul) == 1 and ul[0] != '':
+                upper = ul[0].replace('%', '')
+                lower = None
+            else:
+                upper = None
+                lower = None
+
             sql_update = "INSERT IGNORE INTO `forecast`(`code`, `date`, `业绩变动`, `变动幅度`, `预告类型`, `同" \
-                       "期净利润`, `财报日期`) VALUES ('%s','%s','%s','%s','%s','%s','%s')"%(Scode,Sdate,Schange,Spercent,Stype,Sprofit,Srepdate)
+                         "期净利润`, `财报日期`,`上限`,`下限`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+            param = (Scode, Sdate, Schange, Spercent, Stype, Sprofit, Srepdate, upper, lower)
             cur = conn.cursor()
-            cur.execute(sql_update)
+            cur.execute(sql_update,param)
             conn.commit()
         except Exception as e:
             errorList.append(e)

@@ -71,9 +71,10 @@ def stcn_news():
             link = newsresult.get_value(j,'link')
             datetime =newsresult.get_value(j,'datetime')
             if link not in linklist:
-                sql_update= "insert ignore INTO `news`(`source`, `type`, `title`, `link`, `datetime`) VALUES ('%s','%s','%s','%s','%s')"%(source,stype,title,link,datetime)
+                sql_update= "insert ignore INTO `news`(`source`, `type`, `title`, `link`, `datetime`) VALUES (%s,%s,%s,%s,%s)"
+                param=(source,stype,title,link,datetime)
                 cur = conn.cursor()
-                cur.execute(sql_update)
+                cur.execute(sql_update,param)
                 conn.commit()
             else:
                 pass

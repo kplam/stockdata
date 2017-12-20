@@ -123,9 +123,10 @@ def ftsplit():
             Code_pg = df_pg.get_value(m,'股票代码')
             bl_pg = df_pg.get_value(m,'配股比例（10配）')
             pgj_pg = df_pg.get_value(m,'配股价')
-            sql_ftsplitupdate="INSERT IGNORE INTO `ftsplit`(`code`, `date`, `配股`, `配股价`) VALUES ('%s','%s','%s','%s')"%(Code_pg,Date_pg,bl_pg,pgj_pg)
+            sql_ftsplitupdate="INSERT IGNORE INTO `ftsplit`(`code`, `date`, `配股`, `配股价`) VALUES (%s,%s,%s,%s)"
+            param=(Code_pg,Date_pg,bl_pg,pgj_pg)
             cur=conn.cursor()
-            cur.execute(sql_ftsplitupdate)
+            cur.execute(sql_ftsplitupdate,param)
             conn.commit()
         conn.close()
         print("FTSPLIT:配股信息更新完毕!")

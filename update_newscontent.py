@@ -57,9 +57,10 @@ def news_content():
             else:
                 print("NEW:",list_title[i])
                 # print(newscontent)
-                sql_update_newscontent ="update `news` set `content`='%s' WHERE `link`='%s'"%(newscontent,list_url[i])
+                sql_update_newscontent ="update `news` set `content`=%s WHERE `link`=%s"
+                param=(newscontent,list_url[i])
                 cur=conn.cursor()
-                cur.execute(sql_update_newscontent)
+                cur.execute(sql_update_newscontent,param)
                 conn.commit()
         except Exception as e:
             # print(url,e)

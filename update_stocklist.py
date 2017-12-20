@@ -62,7 +62,6 @@ def update_stocklist(conn=localconn(),proxy=0):
 
         output = str(datetime.date.today())+ (" 更新完成！" if len(Errorlist) == 0 else " 更新出错！请检查！")
         print("STOCKLIST:",output)
-        conn.close()
         return Errorlist
     except:
         return ['数据获取失败...']

@@ -68,7 +68,6 @@ def lhb():
     df_error = pd.DataFrame(errorlist)
     df_error.to_csv('./data/lhb/error.csv')
     print("LHB:更新完毕！")
-    localconn().close()
 
 if __name__ == "__main__" :
     lhb()

@@ -55,7 +55,6 @@ def update_embasedata(stocklist,ser,proxy):
         except Exception as e:
             print(symbol[:-2],sName,e)
             Errorlist.append((symbol[:-2],sName,e))
-    conn.close()
     Errorlist = pd.DataFrame(Errorlist,columns=['证券代码','证券简称','error'])
     Errorlist.to_csv(path()+'/error/update_basedata.csv')
     return Errorlist

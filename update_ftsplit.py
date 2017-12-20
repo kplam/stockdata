@@ -128,7 +128,6 @@ def ftsplit():
             cur=conn.cursor()
             cur.execute(sql_ftsplitupdate,param)
             conn.commit()
-        conn.close()
         print("FTSPLIT:配股信息更新完毕!")
     else:
         print("FTSPLIT:没有可更新的配股信息!")

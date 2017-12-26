@@ -131,24 +131,28 @@ def tech_analysis(sModel='1',**kwargs):
         return {"message":"error!"}
 
 if __name__ == '__main__':
-    today = str(datetime.date.today())
-    cf = cal_financial(localconn()).median()
-    ta_js = tech_analysis(sModel='1',date=today)
-    ta = [elem['code'] for elem in ta_js]
-    ud = get_usefuldata()['code'].values
-    result = list(set(cf).intersection(set(ta)).intersection(set(ud)))
+    for N in range(1):
+        try:
+            today = str(datetime.date.today()-datetime.timedelta(days=N))
+            cf = cal_financial(localconn()).median()
+            ta_js = tech_analysis(sModel='1',date=today)
+            ta = [elem['code'] for elem in ta_js]
+            ud = get_usefuldata(date=today)['code'].values
+            result = list(set(cf).intersection(set(ta)).intersection(set(ud)))
 
-    path = r"D:\Qouting Software\new_pttq_v9\T0002\blocknew\%s.blk"%(today[8:10])
-    f = open(path,'w+')
+            path = r"D:\Qouting Software\new_pttq_v9\T0002\blocknew\%s.blk"%(today[8:10])
+            f = open(path,'w+')
 
-    for i in range(len(result)):
-        symbol = result[i]
-        if symbol[0]=='6':
-            f.write('1' + symbol + '\n')
-        else:
-            f.write('0' + symbol + '\n')
-    f.close()
-    print(result)
+            for i in range(len(result)):
+                symbol = result[i]
+                if symbol[0]=='6':
+                    f.write('1' + symbol + '\n')
+                else:
+                    f.write('0' + symbol + '\n')
+            f.close()
+            print(result)
+        except Exception as e:
+            print(e)
 
 
 

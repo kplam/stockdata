@@ -105,7 +105,7 @@ CREATE TABLE `blocktrade` (
   PRIMARY KEY (`id`,`code`,`交易日期`),
   KEY `cdoe` (`code`,`买方营业部`,`卖方营业部`),
   KEY `类型` (`类型`)
-) ENGINE=InnoDB AUTO_INCREMENT=178209 DEFAULT CHARSET=utf8
+) ENGINE=InnoDB AUTO_INCREMENT=179667 DEFAULT CHARSET=utf8
 /*!50100 PARTITION BY RANGE (YEAR(`交易日期`))
 (PARTITION p10 VALUES LESS THAN (2011) ENGINE = InnoDB,
  PARTITION p11 VALUES LESS THAN (2012) ENGINE = InnoDB,
@@ -590,22 +590,10 @@ CREATE TABLE `forecast` (
   `财报日期` date NOT NULL DEFAULT '1990-01-01',
   `上限` float DEFAULT NULL,
   `下限` float DEFAULT NULL,
-  PRIMARY KEY (`code`,`date`,`财报日期`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Table structure for table `forecast00` */
-
-DROP TABLE IF EXISTS `forecast00`;
-
-CREATE TABLE `forecast00` (
-  `code` varchar(30) NOT NULL,
-  `date` date NOT NULL DEFAULT '1990-01-01',
-  `业绩变动` longtext NOT NULL,
-  `变动幅度` longtext NOT NULL,
-  `预告类型` enum('','减亏','持平','预亏','预减','预增','预盈') NOT NULL,
-  `同期净利润` double NOT NULL,
-  `财报日期` date NOT NULL DEFAULT '1990-01-01',
-  PRIMARY KEY (`code`,`date`,`财报日期`)
+  PRIMARY KEY (`code`,`date`,`财报日期`),
+  KEY `下限` (`下限`),
+  KEY `上限` (`上限`),
+  KEY `预告类型` (`预告类型`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*Table structure for table `ftsplit` */
@@ -795,7 +783,7 @@ CREATE TABLE `news` (
   UNIQUE KEY `link` (`link`),
   KEY `type` (`type`),
   KEY `datetime` (`datetime`)
-) ENGINE=InnoDB AUTO_INCREMENT=14697 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=16933 DEFAULT CHARSET=utf8;
 
 /*Table structure for table `notice` */
 
@@ -887,6 +875,20 @@ CREATE TABLE `spo_done` (
   PRIMARY KEY (`code`,`name`,`发行总数`,`发行日期`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+/*Table structure for table `statistics` */
+
+DROP TABLE IF EXISTS `statistics`;
+
+CREATE TABLE `statistics` (
+  `date` date NOT NULL,
+  `ontrade` int(5) NOT NULL,
+  `halt` int(5) NOT NULL,
+  `total` int(5) NOT NULL,
+  `delisted` int(5) NOT NULL,
+  `all_listed` int(5) NOT NULL,
+  PRIMARY KEY (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 /*Table structure for table `stocklist` */
 
 DROP TABLE IF EXISTS `stocklist`;
@@ -895,7 +897,7 @@ CREATE TABLE `stocklist` (
   `证券代码` varchar(30) NOT NULL,
   `证券简称` longtext NOT NULL,
   `上市市场` enum('上海证券交易所','深圳证券交易所') NOT NULL,
-  `交易状态` enum('0','1','9') NOT NULL DEFAULT '1',
+  `交易状态` enum('0','1','9','-1') NOT NULL DEFAULT '1',
   `拼音缩写` varchar(8) NOT NULL,
   PRIMARY KEY (`证券代码`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -929,6 +931,55 @@ CREATE TABLE `unusual` (
 DROP TABLE IF EXISTS `usefuldata`;
 
 CREATE TABLE `usefuldata` (
+  `code` varchar(30) NOT NULL,
+  `date` date NOT NULL DEFAULT '1990-01-01',
+  `amorank` int(11) DEFAULT NULL,
+  `araise` int(11) DEFAULT NULL,
+  `percentage` float DEFAULT NULL,
+  `focus` varchar(256) NOT NULL DEFAULT '',
+  `taresult` varchar(30) DEFAULT '0',
+  PRIMARY KEY (`code`,`date`),
+  KEY `taresult` (`taresult`),
+  KEY `precentage` (`percentage`),
+  KEY `amorank` (`amorank`,`araise`,`focus`),
+  KEY `date` (`date`),
+  KEY `code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+/*!50100 PARTITION BY RANGE (YEAR(`date`))
+(PARTITION p92 VALUES LESS THAN (1993) ENGINE = InnoDB,
+ PARTITION p93 VALUES LESS THAN (1994) ENGINE = InnoDB,
+ PARTITION p94 VALUES LESS THAN (1995) ENGINE = InnoDB,
+ PARTITION p95 VALUES LESS THAN (1996) ENGINE = InnoDB,
+ PARTITION p96 VALUES LESS THAN (1997) ENGINE = InnoDB,
+ PARTITION p97 VALUES LESS THAN (1998) ENGINE = InnoDB,
+ PARTITION p98 VALUES LESS THAN (1999) ENGINE = InnoDB,
+ PARTITION p99 VALUES LESS THAN (2000) ENGINE = InnoDB,
+ PARTITION p00 VALUES LESS THAN (2001) ENGINE = InnoDB,
+ PARTITION p01 VALUES LESS THAN (2002) ENGINE = InnoDB,
+ PARTITION p02 VALUES LESS THAN (2003) ENGINE = InnoDB,
+ PARTITION p03 VALUES LESS THAN (2004) ENGINE = InnoDB,
+ PARTITION p04 VALUES LESS THAN (2005) ENGINE = InnoDB,
+ PARTITION p05 VALUES LESS THAN (2006) ENGINE = InnoDB,
+ PARTITION p06 VALUES LESS THAN (2007) ENGINE = InnoDB,
+ PARTITION p07 VALUES LESS THAN (2008) ENGINE = InnoDB,
+ PARTITION p08 VALUES LESS THAN (2009) ENGINE = InnoDB,
+ PARTITION p09 VALUES LESS THAN (2010) ENGINE = InnoDB,
+ PARTITION p10 VALUES LESS THAN (2011) ENGINE = InnoDB,
+ PARTITION p11 VALUES LESS THAN (2012) ENGINE = InnoDB,
+ PARTITION p12 VALUES LESS THAN (2013) ENGINE = InnoDB,
+ PARTITION p13 VALUES LESS THAN (2014) ENGINE = InnoDB,
+ PARTITION p14 VALUES LESS THAN (2015) ENGINE = InnoDB,
+ PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
+ PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
+ PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
+ PARTITION p18 VALUES LESS THAN (2019) ENGINE = InnoDB,
+ PARTITION p19 VALUES LESS THAN (2020) ENGINE = InnoDB) */;
+
+/*Table structure for table `usefuldata00` */
+
+DROP TABLE IF EXISTS `usefuldata00`;
+
+CREATE TABLE `usefuldata00` (
   `code` varchar(30) NOT NULL,
   `date` date NOT NULL DEFAULT '1990-01-01',
   `AmoRank` int(11) DEFAULT NULL,

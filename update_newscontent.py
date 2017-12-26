@@ -67,7 +67,6 @@ def news_content():
             errorlist.append((list_url[i],e))
     df_errorlist = pd.DataFrame(errorlist,columns=['link','error'])
     df_errorlist.to_csv(path()+'/error/update_newscontent.csv')
-    conn.close()
 
 if __name__ == '__main__':
     news_content()

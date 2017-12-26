@@ -17,14 +17,14 @@ http://data.eastmoney.com/gstc/search.ashx?SortType=SECURITYCODE&SortRule=1&Page
 
 主营分析：http://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/BusinessAnalysisAjax?code=sh603533
 """
-def update_embasedata(stocklist,ser,proxy):
+def update_embasedata(stocklist,ser='local',proxy=0):
     Errorlist=[]
-    if ser == "server":
+    if ser == 'server':
         conn = serverconn()
-    elif ser =="local":
+    elif ser =='local':
         conn = localconn()
     for i in range(len(stocklist)):
-        sqli = "UPDATE  `basedata` SET  `证券代码` = %s,  `证券简称` = %s,  `公司名称` = %s,  `英文名称` = %s, " \
+        sqli = "UPDATE  `basedata` SET  `证券简称` = %s,  `公司名称` = %s,  `英文名称` = %s, " \
                " `曾用名` = %s,  `公司简介` = %s,  `成立日期` = %s,  `工商登记号` = %s,  `注册资本` = %s,  `法人代表` = %s, " \
                " `所属证监会行业` = %s,  `员工总数` = %s,  `总经理` = %s,  `董事会秘书` = %s,  `省份` = %s,  `城市` = %s,  " \
                "`注册地址` = %s,  `办公地址` = %s,  `邮编` = %s,  `电话` = %s,  `传真` = %s,  `电子邮件` = %s,  " \
@@ -39,15 +39,14 @@ def update_embasedata(stocklist,ser,proxy):
             IntrSoup = bs(Intr, 'html5lib')
             ConcSoup = bs(Conc, 'html5lib')
             stockdata = []
-            stockdata.append(symbol)
             stockdata.append(sName)
             for tr in IntrSoup.find_all(width=880):
                 stockdata.append(txt_pre(tr.text.strip()))
             point = ConcSoup.p
             del point['style']
             stockdata.append(str(point))
-            stockdata.append(symbol)
-            print("BASEDATA:",symbol[:-2], sName, round(i / (len(stocklist))*100,2))
+            stockdata.append(symbol[:-2])
+            print("BASEDATA:",symbol[:-2], sName,i+1,"/",len(stocklist),round((i +1)/ (len(stocklist))*100,2))
             cur = conn.cursor()
             cur.execute(sqli, tuple(stockdata))
             conn.commit()
@@ -64,5 +63,5 @@ if __name__ == "__main__" :
     # stocklist = pd.read_sql(sql,localconn())
     times_retry = 10
     while len(stocklist) > 0 and times_retry != 0:
-        stocklist = update_embasedata(stocklist, "local", 0)
+        stocklist = update_embasedata(stocklist, 'local', 0)
         times_retry -= 1

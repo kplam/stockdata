@@ -121,3 +121,9 @@ cloud_large.png
 tmp06.py
 *.xlsx
 sync.py
+*.exe
+*.zip
+*.rar
+delisted.py
+.idea/dataSources/69509e3b-2d82-486f-81e5-ef96a88276f2/storage_v2/_src_/schema/stockdata.wGucSw.meta
+delisted.py

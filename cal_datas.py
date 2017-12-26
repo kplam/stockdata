@@ -201,8 +201,8 @@ class calc:
     def amorank(self):
         df_data = self.df_dayline
         df_data = df_data.sort_values(by=['amo'], ascending=False)
-        df_data['AmoRank'] = pd.Series(np.arange(len(df_data['date'])) + 1, index=df_data.index)
-        df_data = df_data[['code', 'date', 'AmoRank']]
+        df_data['amorank'] = pd.Series(np.arange(len(df_data['date'])) + 1, index=df_data.index)
+        df_data = df_data[['code', 'date', 'amorank']]
         df_data = df_data.reset_index(drop=True)
         result = []
         df_list = calc.adjfactor(self)
@@ -212,8 +212,8 @@ class calc:
         for i in range(len(df_data)):
             code = df_data.get_value(i, 'code')
             date = df_data.get_value(i, 'date')
-            fAmorank = df_data.get_value(i, 'AmoRank')
-            sql_refar = "select `AmoRank` from `usefuldata` WHERE `code` ='%s' and `date`<'%s' and `AmoRank` is NOT NULL" \
+            fAmorank = df_data.get_value(i, 'amorank')
+            sql_refar = "select `amorank` from `usefuldata` WHERE `code` ='%s' and `date`<'%s' and `amorank` is NOT NULL" \
                         " ORDER BY `date` DESC LIMIT 0,1" % (code, date)
             df_refar = pd.read_sql(sql_refar, self.con)
             if df_refar.empty == False:
@@ -224,7 +224,7 @@ class calc:
             percentage = df_list[df_list['code']==code]['percentage'].values[0]
             taresult = '1' if code in taresultlist else '0'
             result.append([code, date, fAmorank, ARaise,percentage,taresult])
-        result=pd.DataFrame(result,columns=['code','date','AmoRank','ARaise','precentage','taresult'])
+        result=pd.DataFrame(result,columns=['code','date','amorank','araise','percentage','taresult'])
         print("CALC:正在将成交量信息写入数据库...")
         errorlist = []
         try:

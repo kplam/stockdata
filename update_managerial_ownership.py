@@ -5,7 +5,7 @@ Created on 15:20:00 2017-12-07
 
 @author: kplam
 """
-from kpfunc.spyder import myspyder
+from kpfunc.spyder import *
 from kpfunc.getdata import localconn,serverconn
 from kpfunc.function import path
 import re,datetime
@@ -37,14 +37,13 @@ def mo(pages,conn=localconn(),proxy=0):
     df=df.drop_duplicates()
     df['日期']=df['日期'].astype('datetime64')
     df=df[df['日期']==today]
-    print(df)
     df.to_sql('managerial',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
     return error
 
-if __name__ =="__main__":
-    pages = range(1,2)
-    times_retry=3
-    while len(pages)!=0 and times_retry!=0:
-        pages = mo(pages)
-        times_retry -= 1
-
+if __name__ == '__main__':
+    # pages = range(1,2)
+    # times_retry=3
+    # while len(pages)!=0 and times_retry!=0:
+    #     pages = mo(pages)
+    #     times_retry -= 1
+    mo([1])

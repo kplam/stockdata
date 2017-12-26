@@ -58,7 +58,6 @@ def notices(page,conn=localconn(),proxy=0):
                 conn.commit()
             else:
                 pass
-        conn.close()
         # return None
     except Exception as e:
         print(e)

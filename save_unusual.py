@@ -27,7 +27,7 @@ def unusual():
     html = myspyder(url,0).content.decode('utf-8')
     return html
 def analysis():
-    print("UNUSUAL: Running...")
+    # print("UNUSUAL: Running...")
     today = datetime.date.today()
     now=datetime.datetime.today()-datetime.timedelta(minutes=5)
     data = json.loads(unusual())
@@ -51,7 +51,7 @@ def analysis():
         cur=conn.cursor()
         cur.execute(sql_update,tuple(param))
         conn.commit()
-    print("UNUSUAL: Done!")
+    # print("UNUSUAL: Done!")
     # df.to_sql('unusual',localconn(),flavor='mysql',schema='stockdata',if_exists='append',index=False)
     # counts = Counter(df['code'].values).items()
     # print(pd.DataFrame(list(counts),columns=['code','times']).to_json(orient='records',force_ascii= False))

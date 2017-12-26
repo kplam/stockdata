@@ -89,7 +89,6 @@ def ftsplit():
             df_ftsplit = pd.concat((df_ftsplit,df_Fin))
         df_ftsplit = pd.DataFrame(np.array(df_ftsplit),columns=['code','红股','红利','date'])
         times_retry = times_retry-1
-    print(df_ftsplit)
     if df_ftsplit.empty != True:
         df_ftsplit = df_ftsplit.reset_index(range(len(df_ftsplit)), drop=True)
         for i in range(len(df_ftsplit)):
@@ -102,7 +101,6 @@ def ftsplit():
             cur = conn.cursor()
             cur.execute(sql_update,sql_param)
             conn.commit()
-        conn.close()
         print("FTSPLIT:数据写入完毕！")
     else:
         print("FTSPLIT:没有可写入的数据！")
@@ -119,7 +117,7 @@ def ftsplit():
     if df_pg.empty !=True:
         df_pg = df_pg.reset_index(range(len(df_pg)), drop=True)
         for m in range(len(df_pg)):
-            Date_pg = df_pg.get_value(m,'除权日')
+            Date_pg = str(df_pg.get_value(m,'除权日'))
             Code_pg = df_pg.get_value(m,'股票代码')
             bl_pg = df_pg.get_value(m,'配股比例（10配）')
             pgj_pg = df_pg.get_value(m,'配股价')

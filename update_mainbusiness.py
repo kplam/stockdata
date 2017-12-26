@@ -12,7 +12,7 @@ from time import sleep
 from random import random
 import pandas as pd
 from numpy import nan
-import json
+import json,warnings
 
 
 def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1),conn=localconn(),proxy=0):
@@ -44,19 +44,32 @@ def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1),conn=localconn(),pr
                 df[i][6] = df[i][6].replace('%', '')
                 df[i][8] = df[i][8].replace('%', '')
                 df[i][9] = df[i][9].replace('%', '')
-                if '亿' in df[i][5]:
+                if '万亿' in df[i][5]:
+                    df[i][5] = float(df[i][5].replace('万亿', '')) * 1000000000000
+                elif '亿' in df[i][5]:
                     df[i][5] = float(df[i][5].replace('亿', '')) * 100000000
                 elif '万' in df[i][5]:
                     df[i][5] = float(df[i][5].replace('万', '')) * 10000
-                if '亿' in df[i][7]:
+                if '万亿' in df[i][7]:
+                    df[i][7] = float(df[i][7].replace('万亿', '')) * 1000000000000
+                elif '亿' in df[i][7]:
                     df[i][7] = float(df[i][7].replace('亿', '')) * 100000000
                 elif '万' in df[i][7]:
                     df[i][7] = float(df[i][7].replace('万', '')) * 10000
             df = pd.DataFrame(df, columns=['code','报表日期','主营构成','主营收入','收入比例','主营成本','成本比例',
                                               '主营利润','利润比例','毛利率','分类'])
-            df = df.replace('--', nan)
+            df = df.replace('--', '')
             # print(df)
-            df.to_sql('mainbusiness',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
+            # df.to_sql('mainbusiness',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
+            try:
+                for elem in df.values:
+                    sql_update= "insert ignore into `mainbusiness` (code, 报表日期, 主营构成, 主营收入, 收入比例, 主营成本," \
+                                " 成本比例, 主营利润, 利润比例, 毛利率, 分类) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                    cur =conn.cursor()
+                    cur.execute(sql_update,tuple(elem))
+                    conn.commit()
+            except Exception as e:
+                print("MAINBUSINESS:",code,e)
         except Exception as e:
             print("MAINBUSINESS:",e)
             errorlist.append(code)
@@ -66,6 +79,7 @@ def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1),conn=localconn(),pr
 主营分析：http://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/BusinessAnalysisAjax?code=sh603533
 """
 if __name__ == "__main__":
+    warnings.filterwarnings('ignore')
     stocklist = get_stocklist_prefix('sh','sz',1)
     times_retry = 3
     while len(stocklist) != 0 and times_retry != 0:

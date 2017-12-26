@@ -12,7 +12,8 @@ from numpy import nan
 import datetime,re
 import pandas as pd
 
-def spo(conn=localconn(),proxy=0):
+def spo(con=localconn(),proxy=0):
+    conn=con
     print("SPO: Running...")
     errorlist=[]
     today=datetime.date.today()
@@ -45,6 +46,6 @@ def spo(conn=localconn(),proxy=0):
 "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=50&st=5"
 """
 if __name__ =="__main__":
-    errorlist=spo(conn=localconn(),proxy=0)
+    errorlist=spo(con=localconn(),proxy=0)
     df=pd.DataFrame(errorlist)
     df.to_csv(path()+'/error/update_spo.csv')

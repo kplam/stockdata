@@ -35,7 +35,6 @@ def update_stocklist(conn=localconn(),proxy=0):
         xg['code'] = xg ['code'].astype('str')
         xg = xg.dropna().reset_index(drop=True)
         print("STOCKLIST:数据获取成功，正在写入数据库...")
-
         stocklist = get_stocklist()
         conn = conn
         Errorlist =[]

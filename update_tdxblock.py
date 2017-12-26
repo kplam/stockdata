@@ -130,22 +130,22 @@ def tech_analysis(sModel='1',**kwargs):
     except:
         return {"message":"error!"}
 
-if __name__ == '__main__':
-    for N in range(1):
+def tdxblock(num=1):
+    for N in range(num):
         try:
-            today = str(datetime.date.today()-datetime.timedelta(days=N))
+            today = str(datetime.date.today() - datetime.timedelta(days=N))
             cf = cal_financial(localconn()).median()
-            ta_js = tech_analysis(sModel='1',date=today)
+            ta_js = tech_analysis(sModel='1', date=today)
             ta = [elem['code'] for elem in ta_js]
             ud = get_usefuldata(date=today)['code'].values
             result = list(set(cf).intersection(set(ta)).intersection(set(ud)))
 
-            path = r"D:\Qouting Software\new_pttq_v9\T0002\blocknew\%s.blk"%(today[8:10])
-            f = open(path,'w+')
+            path = r"D:\Qouting Software\new_pttq_v9\T0002\blocknew\%s.blk" % (today[8:10])
+            f = open(path, 'w+')
 
             for i in range(len(result)):
                 symbol = result[i]
-                if symbol[0]=='6':
+                if symbol[0] == '6':
                     f.write('1' + symbol + '\n')
                 else:
                     f.write('0' + symbol + '\n')
@@ -153,6 +153,9 @@ if __name__ == '__main__':
             print(result)
         except Exception as e:
             print(e)
+
+if __name__ == '__main__':
+    tdxblock(1)
 
 
 

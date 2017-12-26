@@ -186,6 +186,20 @@ def run_dayline():
             print("Dayline:",e)
     gc.collect()
 
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=17,minute=45,id='run_tdx')
+def run_tdx():
+    holiday =['2017-12-30','2017-12-31','2018-01-01','2018-02-15','2018-02-16','2018-02-17','2018-02-18','2018-02-19',
+              '2018-02-20','2018-02-21','2018-04-05','2018-04-06','2018-04-07','2018-04-29','2018-04-30','2018-05-01',
+              '2018-06-16','2018-06-17','2018-06-18','2018-09-22','2018-09-23','2018-09-24','2018-10-01','2018-10-02',
+              '2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07']
+    if str(datetime.date.today()) not in holiday:
+        from update_tdxblock import tdxblock
+        try:
+            tdxblock(1)
+        except Exception as e:
+            print("tdx:",e)
+    gc.collect()
+
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=15,minute=30,id='run_ftsplit')
 def run_ftsplit():
     try:

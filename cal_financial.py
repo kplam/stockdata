@@ -9,7 +9,7 @@ import pandas as pd
 import datetime
 
 class cal_financial:
-    def __init__(self,conn = localconn()):
+    def __init__(self,conn = serverconn()):
         """
         :param conn: set sql conn (localconn()/serverconn())
         """
@@ -80,10 +80,13 @@ class cal_financial:
         for i in range(len(DF_FA)):
             code=DF_FA.get_value(i,'代码')
             sql_ipo ="select `首发日期` from `basedata` WHERE `证券代码`='%s'"%(code)
-            ipodate = pd.read_sql(sql_ipo, self.conn).values[0][0]
+            ipodate = pd.read_sql(sql_ipo, self.conn)
+
+            ipodate=ipodate.values[0][0] if ipodate.empty == False else datetime.date.today()+datetime.timedelta(days=1)
             if datetime.date.today() - ipodate < datetime.timedelta(365*3):
                 sql_close="select `close` from `dayline` WHERE `code`='%s' ORDER by `date` DESC limit 0,1"%(code)
-                close=pd.read_sql(sql_close, self.conn).values[0][0]
+                close=pd.read_sql(sql_close, self.conn)
+                close =close.values[0][0] if close.empty == False else 0
                 if close >cp :
                     sql_capital ="SELECT `总股本` FROM `capitalchange` WHERE `﻿股票代码` ='%s' ORDER BY `变动日期` DESC " \
                                  "limit 0,1"%(code)
@@ -99,6 +102,17 @@ class cal_financial:
                                 result.append(code)
         return result
 
+    def custom(self,sfield,swhere):
+        sql_custom = "select " + sfield + " from `financial` where " + swhere
+        df_custom = pd.read_sql(sql_custom,self.conn)
+        df_custom['报表日期']=df_custom['报表日期'].astype('str')
+        json_output = df_custom.to_json(orient='records',force_ascii=False)
+        return json_output
+
+
+
 if __name__ == "__main__" :
+    # cal_financial(conn=localconn()).updatesql()
+    # cal_financial(conn=serverconn()).updatesql()
     cal_financial(conn=localconn()).updatesql()
-    cal_financial(conn=serverconn()).updatesql()
+    # print(cal_financial(conn=localconn()).median())

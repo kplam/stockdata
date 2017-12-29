@@ -6,23 +6,26 @@ Created on Fri Nov 10 15:20:00 2017
 @author: kplam
 """
 import requests as rq
-from bs4 import BeautifulSoup as bs
+# from bs4 import BeautifulSoup as bs
 import pandas as pd
-from kpfunc.getdata import localconn
+from kpfunc.getdata import localconn,serverconn
 from kpfunc.spyder import myspyder
 from kpfunc.function import path
 import time,datetime,re,random,json
 """
 http://app.stcn.com/?app=article&controller=article&action=fulltext&contentid=
 """
-def news_content():
+def news_content(ser='both'):
+
     # ===================
-    conn=localconn()
+    if ser == 'local' or ser == 'both':
+        conn = localconn()
+    if ser == 'server' or ser == 'both':
+        conns = serverconn()
     today=datetime.date.today()
     # ===================set requests================== #
-    rqs = rq.session()
-    rqs.keep_alive = False
-    rqshead = {'User-Agent':'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36'}
+    # rqs = rq.session()
+    # rqs.keep_alive = False
     # ===================get news content================ #
 
     sql_news_null = "SELECT * FROM `news` WHERE `content` IS NULL OR (`title` LIKE '%%更新中%%' and `datetime`>='%s')"%(today)
@@ -57,16 +60,21 @@ def news_content():
             else:
                 print("NEW:",list_title[i])
                 # print(newscontent)
-                sql_update_newscontent ="update `news` set `content`=%s WHERE `link`=%s"
-                param=(newscontent,list_url[i])
-                cur=conn.cursor()
-                cur.execute(sql_update_newscontent,param)
-                conn.commit()
+                sql_update_newscontent = "update `news` set `content`=%s WHERE `link`=%s"
+                param = (newscontent,list_url[i])
+                if ser == 'local' or ser == 'both':
+                    cur = conn.cursor()
+                    cur.execute(sql_update_newscontent, param)
+                    conn.commit()
+                if ser == 'server' or ser == 'both':
+                    curs = conns.cursor()
+                    curs.execute(sql_update_newscontent, param)
+                    conns.commit()
         except Exception as e:
             # print(url,e)
-            errorlist.append((list_url[i],e))
-    df_errorlist = pd.DataFrame(errorlist,columns=['link','error'])
+            errorlist.append((list_url[i], e))
+    df_errorlist = pd.DataFrame(errorlist, columns=['link','error'])
     df_errorlist.to_csv(path()+'/error/update_newscontent.csv')
 
 if __name__ == '__main__':
-    news_content()
+    news_content(ser='both')

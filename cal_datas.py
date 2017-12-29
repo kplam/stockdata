@@ -15,9 +15,13 @@ import numpy as np
 
 
 class calc:
-    def __init__(self,conn='local',length=365):
+    def __init__(self,ser='both',length=365):
+        self.ser = ser
         print("CALC:正在获取数据...")
-        self.con = localconn() if conn =='local' else serverconn()
+
+        self.con = localconn()
+        if self.ser == 'server' or self.ser  == 'both':
+            self.cons = serverconn()
         self.datelist = pd.read_sql("select distinct `date` from `indexdb` ORDER BY `date` DESC limit 0,2",self.con)['date'].values
         self.today,self.lastdate = self.datelist[0],self.datelist[1]
         self.date_start = self.today-datetime.timedelta(days=length)
@@ -58,9 +62,14 @@ class calc:
                 list.append([code,self.today, close, preclose, adjfactor, adjcump, percentage])
                 sql_updatesplit = "update `ftsplit` set `单次复权因子`='%s',`累计复权因子`='%s',`前收盘价`='%s',`除权价`='%s'" \
                                   " WHERE `code`='%s' and `date`='%s'"%(adjfactor,adjcump,preclose,adj_preclose,code,self.today)
-                cur =self.con.cursor()
-                cur.execute(sql_updatesplit)
-                self.con.commit()
+                if self.ser == 'local' or self.ser == 'both':
+                    cur =self.con.cursor()
+                    cur.execute(sql_updatesplit)
+                    self.con.commit()
+                if self.ser == 'server' or self.ser == 'both':
+                    curs = self.cons.cursor()
+                    curs.execute(sql_updatesplit)
+                    self.cons.commit()
             else:
                 if code in codelist_ipo:
                     close = self.df_dayline[self.df_dayline['code']==code]['close'].values[0]
@@ -102,9 +111,17 @@ class calc:
                                 sql_updatesplit = "update `ftsplit` set `单次复权因子`='%s',`累计复权因子`='%s',`前收盘价`='%s',`除权价`='%s'" \
                                                   " WHERE `code`='%s' and `date`='%s'" % (
                                                   adjfactor, adjcump, preclose, adj_preclose, code, splitdate)
-                                cur = self.con.cursor()
-                                cur.execute(sql_updatesplit)
-                                self.con.commit()
+                                if self.ser == 'local' or self.ser == 'both':
+                                    cur = self.con.cursor()
+                                    cur.execute(sql_updatesplit)
+                                    self.con.commit()
+                                if self.ser == 'server' or self.ser == 'both':
+                                    curs = self.cons.cursor()
+                                    curs.execute(sql_updatesplit)
+                                    self.cons.commit()
+                                # cur = self.con.cursor()
+                                # cur.execute(sql_updatesplit)
+                                # self.con.commit()
                             else:
                                 adjfactor = preclose2 / adj_preclose
                                 preclose2 = adj_preclose
@@ -113,19 +130,41 @@ class calc:
                                 sql_updatesplit = "update `ftsplit` set `单次复权因子`='%s',`累计复权因子`='%s',`前收盘价`='%s',`除权价`='%s'" \
                                                   " WHERE `code`='%s' and `date`='%s'" % (
                                                       adjfactor, adjcump, preclose2, adj_preclose, code, splitdate)
-                                cur = self.con.cursor()
-                                cur.execute(sql_updatesplit)
-                                self.con.commit()
+                                if self.ser == 'local' or self.ser == 'both':
+                                    cur = self.con.cursor()
+                                    cur.execute(sql_updatesplit)
+                                    self.con.commit()
+                                if self.ser == 'server' or self.ser == 'both':
+                                    curs = self.cons.cursor()
+                                    curs.execute(sql_updatesplit)
+                                    self.cons.commit()
+                                # cur = self.con.cursor()
+                                # cur.execute(sql_updatesplit)
+                                # self.con.commit()
                         percentage = (close/preclose2-1)*100
                         list.append([code, self.today, close, preclose, preclose/preclose2, adjcump, percentage])
 
-        sql_turncate ="TRUNCATE `dayline_tmp`"
-        cur = self.con.cursor()
-        cur.execute(sql_turncate)
-        self.con.commit()
+
         df_adj=pd.DataFrame(list,columns=['code', 'date', 'close', 'preclose', 'adjfactor', 'adjcump', 'percentage'])
         df_adj_update = df_adj[['code', 'date', 'adjfactor', 'adjcump']]
-        df_adj_update.to_sql('dayline_tmp',con=self.con,flavor='mysql',schema='stockdata',if_exists='append',index=False,dtype=None)
+        sql_turncate ="TRUNCATE `dayline_tmp`"
+        if self.ser == 'local' or self.ser == 'both':
+            cur = self.con.cursor()
+            cur.execute(sql_turncate)
+            self.con.commit()
+            df_adj_update.to_sql('dayline_tmp', con=self.con, flavor='mysql', schema='stockdata', if_exists='append',
+                                 index=False, dtype=None)
+        if self.ser == 'server' or self.ser == 'both':
+            curs = self.cons.cursor()
+            curs.execute(sql_turncate)
+            self.cons.commit()
+            df_adj_update.to_sql('dayline_tmp', con=self.cons, flavor='mysql', schema='stockdata', if_exists='append',
+                                 index=False, dtype=None)
+        # cur = self.con.cursor()
+        # cur.execute(sql_turncate)
+        # self.con.commit()
+
+        # df_adj_update.to_sql('dayline_tmp',con=self.con,flavor='mysql',schema='stockdata',if_exists='append',index=False,dtype=None)
         return df_adj
 
     def tamodel(self):
@@ -228,7 +267,12 @@ class calc:
         print("CALC:正在将成交量信息写入数据库...")
         errorlist = []
         try:
-            result.to_sql('usefuldata',self.con,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
+            if self.ser == 'local' or self.ser == 'both':
+                result.to_sql('usefuldata',self.con,flavor='mysql',schema='stockdata',if_exists='append',
+                              index=False,chunksize=10000)
+            if self.ser == 'server' or self.ser == 'both':
+                result.to_sql('usefuldata', self.cons, flavor='mysql', schema='stockdata', if_exists='append',
+                              index=False, chunksize=10000)
         except Exception as e:
             errorlist.append(e)
         dferrorlist = pd.DataFrame(errorlist)

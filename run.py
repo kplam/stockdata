@@ -36,7 +36,7 @@ BS = BlockingScheduler()
 @BS.scheduled_job('interval', max_instances=10, minutes=1, id='run_news')
 def run_news():
     try:
-        stcn_news()
+        stcn_news(ser='both')
     except Exception as e:
         print("news:",e)
     gc.collect()
@@ -44,7 +44,7 @@ def run_news():
 @BS.scheduled_job('interval', max_instances=10, minutes=2, id='run_newscontent')
 def run_newscontent():
     try:
-        news_content()
+        news_content(ser='both')
     except Exception as e:
         print("newscontent:",e)
     gc.collect()
@@ -52,7 +52,7 @@ def run_newscontent():
 @BS.scheduled_job('interval', max_instances=10, hours=2, id='run_forecast')
 def run_forecast():
     try:
-        get_forecast()
+        get_forecast(ser='both',proxy=0,lastday=0,update=1)
     except Exception as e:
         print("forecast:",e)
     gc.collect()
@@ -60,7 +60,7 @@ def run_forecast():
 @BS.scheduled_job('interval', max_instances=10, hours=2,id='run_notices')
 def run_notices():
     try:
-        notices(1,localconn(),0)
+        notices(1,ser='both',proxy=0)
     except Exception as e:
         print("notice:",e)
     gc.collect()
@@ -72,24 +72,24 @@ def run_basedata():
         stocklist = pd.read_sql(sql, localconn())
         times_retry = 10
         while len(stocklist) > 0 and times_retry != 0:
-            stocklist = update_embasedata(stocklist, "local", 0)
+            stocklist = update_embasedata(stocklist, ser='both', proxy=0)
             times_retry -= 1
     except Exception as e:
         print("Basedata:",e)
     gc.collect()
 
-@BS.scheduled_job('cron', max_instances=10, hour=20,id='run_stocklist')
+@BS.scheduled_job('cron', max_instances=10, hour='8,12,20',id='run_stocklist')
 def run_stocklist():
     try:
-        update_stocklist()
+        update_stocklist(ser='both',proxy=0)
     except Exception as e:
         print("Stocklist:",e)
     gc.collect()
 
-@BS.scheduled_job('interval', max_instances=10, hours=8,id='run_mo')
+@BS.scheduled_job('interval', max_instances=10, hours=3,id='run_mo')
 def run_mo():
     try:
-        mo([1])
+        mo([1], ser='both', proxy=0)
     except Exception as e:
         print("MO:",e)
     gc.collect()
@@ -102,7 +102,7 @@ def run_lhb():
               '2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07']
     if str(datetime.date.today()) not in holiday:
         try:
-            lhb()
+            lhb(ser='both')
         except Exception as e:
             print("LHB:",e)
     gc.collect()
@@ -116,15 +116,15 @@ def run_blocktrade():
     if str(datetime.date.today()) not in holiday:
         list_date = [datetime.date.today()]
         try:
-            get_blocktrade(list_date)
+            get_blocktrade(list_date,ser='both',proxy=0)
         except Exception as e:
             print("blocktrade:",e)
     gc.collect()
 
-@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=18,minute=10,id='run_spo')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour='18,20,22',minute=10,id='run_spo')
 def run_spo():
     try:
-        spo(con=localconn(),proxy=0)
+        spo(ser='both',proxy=0)
     except Exception as e:
         print("spo:",e)
     gc.collect()
@@ -150,7 +150,7 @@ def get_statistics():
               '2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07']
     if str(datetime.date.today()) not in holiday:
         try:
-            cal_statistics()
+            cal_statistics(ser='both')
         except Exception as e:
             print("statistics:",e)
     gc.collect()
@@ -163,7 +163,7 @@ def run_caldatas():
               '2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07']
     if str(datetime.date.today()) not in holiday:
         try:
-            calc().amorank()
+            calc(ser='both').amorank()
         except Exception as e:
             print("caldatas:",e)
     gc.collect()
@@ -180,7 +180,13 @@ def run_dayline():
             print("Update stock daybar done!")
             update_bar().update_index()
             print("Update index daybar done!")
+            update_bar(conn=serverconn()).update_stock()
+            print("Update stock daybar done!")
+            update_bar(conn=serverconn()).update_index()
+            print("Update index daybar done!")
             update_bar().update_stock_status()
+            print('Update Stock Status Done!')
+            update_bar(conn=serverconn()).update_stock_status()
             print('Update Stock Status Done!')
         except Exception as e:
             print("Dayline:",e)
@@ -203,7 +209,7 @@ def run_tdx():
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=15,minute=30,id='run_ftsplit')
 def run_ftsplit():
     try:
-        ftsplit()
+        ftsplit(ser='both')
     except Exception as e:
         print("ftsplit:",e)
     gc.collect()
@@ -217,12 +223,12 @@ def run_unusual():
     if str(datetime.date.today()) not in holiday:
         if 92400 <= int(time.strftime("%H%M%S")) <= 151000:
             try:
-                analysis()
+                analysis(ser='both')
             except Exception as e:
                 print("unusual:",e)
     gc.collect()
 
-@BS.scheduled_job('cron', max_instances=10, day_of_week='sat',hour='9',id='run_shareholder')
+@BS.scheduled_job('cron', max_instances=10, day_of_week='sat', hour = '9', id='run_shareholder')
 def run_shareholder():
     from update_shareholder import get_shareholder_data
     try:
@@ -243,7 +249,7 @@ def run_mainbusiness():
         stocklist = get_stocklist_prefix('sh', 'sz', 1)
         times_retry = 3
         while len(stocklist) != 0 and times_retry != 0:
-            stocklist = mainbusiness(stocklist, localconn(), 0)
+            stocklist = mainbusiness(stocklist=stocklist,ser='both',proxy= 0)
             times_retry -= 1
         error = pd.DataFrame(stocklist)
         error.to_csv(path() + '/error/update_mainbusiness.csv')
@@ -257,7 +263,7 @@ def run_basedata_all():
         stocklist = get_df_stocklist()
         times_retry = 10
         while len(stocklist) > 0 and times_retry != 0:
-            stocklist = update_embasedata(stocklist, "local", 0)
+            stocklist = update_embasedata(stocklist, ser='both', proxy=0)
             times_retry -= 1
     except Exception as e:
         print("Basedata:",e)

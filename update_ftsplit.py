@@ -63,9 +63,12 @@ def split_pg(proxy):  # 配股
             pass
     return List_Fin_pg
 
-def ftsplit():
+def ftsplit(ser='both'):
     # ============ global define ============== #
-    conn = localconn()
+    if ser == 'local' or ser == 'both':
+        conn = localconn()
+    if ser == 'server' or ser == 'both':
+        conns = serverconn()
     List_stock = get_stocklist()
     iLong = int((round(len(List_stock)/1000,0)+1)*1000)
 
@@ -98,9 +101,14 @@ def ftsplit():
             sdate = str(df_ftsplit.get_value(i,'date'))
             sql_param=(code,sz,xj,sdate)
             sql_update = "INSERT IGNORE INTO `ftsplit`(`code`, `红股`, `红利`,`date`) VALUES (%s,%s,%s,%s)"
-            cur = conn.cursor()
-            cur.execute(sql_update,sql_param)
-            conn.commit()
+            if ser == 'local' or ser == 'both':
+                cur = conn.cursor()
+                cur.execute(sql_update,sql_param)
+                conn.commit()
+            if ser == 'server' or ser == 'both':
+                curs = conns.cursor()
+                curs.execute(sql_update,sql_param)
+                conns.commit()
         print("FTSPLIT:数据写入完毕！")
     else:
         print("FTSPLIT:没有可写入的数据！")
@@ -123,13 +131,18 @@ def ftsplit():
             pgj_pg = df_pg.get_value(m,'配股价')
             sql_ftsplitupdate="INSERT IGNORE INTO `ftsplit`(`code`, `date`, `配股`, `配股价`) VALUES (%s,%s,%s,%s)"
             param=(Code_pg,Date_pg,bl_pg,pgj_pg)
-            cur=conn.cursor()
-            cur.execute(sql_ftsplitupdate,param)
-            conn.commit()
+            if ser == 'local' or ser == 'both':
+                cur=conn.cursor()
+                cur.execute(sql_ftsplitupdate,param)
+                conn.commit()
+            if ser == 'server' or ser == 'both':
+                curs=conns.cursor()
+                curs.execute(sql_ftsplitupdate,param)
+                conns.commit()
         print("FTSPLIT:配股信息更新完毕!")
     else:
         print("FTSPLIT:没有可更新的配股信息!")
     return 1
 
 if __name__ == '__main__' :
-    ftsplit()
+    ftsplit(ser='both')

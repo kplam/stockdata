@@ -15,9 +15,15 @@ from numpy import nan
 import json,warnings
 
 
-def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1),conn=localconn(),proxy=0):
+def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1),ser='both',proxy=0):
     url = "http://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/BusinessAnalysisAjax?code="
     errorlist =[]
+
+    if ser == 'local' or ser == 'both':
+        conn = localconn()
+    if ser == 'server' or ser == 'both':
+        conns = serverconn()
+
     for code in stocklist:
         print("MAINBUSINESS:",code)
         try:
@@ -58,16 +64,29 @@ def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1),conn=localconn(),pr
                     df[i][7] = float(df[i][7].replace('万', '')) * 10000
             df = pd.DataFrame(df, columns=['code','报表日期','主营构成','主营收入','收入比例','主营成本','成本比例',
                                               '主营利润','利润比例','毛利率','分类'])
-            df = df.replace('--', '')
+            # df = df.replace('--', '')
             # print(df)
             # df.to_sql('mainbusiness',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
             try:
                 for elem in df.values:
                     sql_update= "insert ignore into `mainbusiness` (code, 报表日期, 主营构成, 主营收入, 收入比例, 主营成本," \
                                 " 成本比例, 主营利润, 利润比例, 毛利率, 分类) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                    cur =conn.cursor()
-                    cur.execute(sql_update,tuple(elem))
-                    conn.commit()
+
+                    params = []
+                    for param in elem:
+                        if param != '--':
+                            params.append(str(param))
+                        else:
+                            params.append(None)
+                    if ser == 'local' or ser == 'both':
+
+                        cur =conn.cursor()
+                        cur.execute(sql_update,params)
+                        conn.commit()
+                    if ser == 'server' or ser == 'both':
+                        curs =conns.cursor()
+                        curs.execute(sql_update,params)
+                        conns.commit()
             except Exception as e:
                 print("MAINBUSINESS:",code,e)
         except Exception as e:
@@ -83,7 +102,7 @@ if __name__ == "__main__":
     stocklist = get_stocklist_prefix('sh','sz',1)
     times_retry = 3
     while len(stocklist) != 0 and times_retry != 0:
-        stocklist = mainbusiness(stocklist,localconn(),0)
+        stocklist = mainbusiness(stocklist,ser='both',proxy=0)
         times_retry -= 1
     error=pd.DataFrame(stocklist)
     error.to_csv(path()+'/error/update_mainbusiness.csv')

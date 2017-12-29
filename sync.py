@@ -7,7 +7,7 @@ from math import isnan
 
 local = localconn()
 server = serverconn()
-today =datetime.date.today() #-datetime.timedelta(days=2)
+today = datetime.date.today() #-datetime.timedelta(days=2)
 
 def sync(sdate):
     try:
@@ -26,7 +26,6 @@ def sync(sdate):
             local.commit()
     except Exception as e:
         print(e)
-
 
 if __name__ == '__main__':
     sync(str(today))

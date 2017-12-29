@@ -155,7 +155,7 @@ def tdxblock(num=1):
             print(e)
 
 if __name__ == '__main__':
-    tdxblock(1)
+    tdxblock(30)
 
 
 

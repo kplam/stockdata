@@ -5,21 +5,24 @@ Created on 15:20:00 2017-11-22
 
 @author: kplam
 """
-from kpfunc.getdata import get_stocklist_prefix,localconn
+from kpfunc.getdata import get_stocklist_prefix,localconn,serverconn
 from kpfunc.spyder import myspyder
-from random import random
+# from random import random
 import time,warnings
 import pandas as pd
 from bs4 import BeautifulSoup as bs
 import numpy as np
-from gevent.pool import Pool
-from gevent import monkey
-import gevent
+# from gevent.pool import Pool
+# from gevent import monkey
+# import gevent
 
 
 
-def get_single_shareholder_data(code,proxy=1):
-    conn = localconn()
+def get_single_shareholder_data(code,ser='both',proxy=0):
+    if ser == 'local' or ser == 'both':
+        conn = localconn()
+    if ser == 'server' or ser == 'both':
+        conns = serverconn()
     # rqs = rq.session()
     # rqs.keep_alive = False
     # rqs_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36'}
@@ -72,9 +75,14 @@ def get_single_shareholder_data(code,proxy=1):
                 sql_gp51 = "INSERT IGNORE INTO `cirholder`(`code`, `date`, `rank`, `name`, `type`, `quantity`, `percentage`," \
                            " `change`, `abh`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 sql_gp51_param = tuple(newdata_51.iloc[j].values)
-                cur = conn.cursor()
-                cur.execute(sql_gp51,sql_gp51_param)
-                conn.commit()
+                if ser == 'local' or ser == 'both':
+                    cur = conn.cursor()
+                    cur.execute(sql_gp51, sql_gp51_param)
+                    conn.commit()
+                if ser == 'server' or ser == 'both':
+                    curs = conns.cursor()
+                    curs.execute(sql_gp51, sql_gp51_param)
+                    conns.commit()
         f510.close()
 
         rqs_url2 = "http://soft-f9.eastmoney.com/soft/gp50.php?code=%s&exp=1" % (code)
@@ -122,9 +130,14 @@ def get_single_shareholder_data(code,proxy=1):
                 sql_gp50 = "INSERT IGNORE INTO `shareholder`(`code`, `date`, `rank`, `name`, `quantity`, `percentage`," \
                            " `change`, `type`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
                 sql_gp50_param = tuple(newdata_50.iloc[l].values)
-                cur = conn.cursor()
-                cur.execute(sql_gp50,sql_gp50_param)
-                conn.commit()
+                if ser == 'local' or ser == 'both':
+                    cur = conn.cursor()
+                    cur.execute(sql_gp50,sql_gp50_param)
+                    conn.commit()
+                if ser == 'server' or ser == 'both':
+                    curs = conns.cursor()
+                    curs.execute(sql_gp50,sql_gp50_param)
+                    conns.commit()
         f500.close()
         # time.sleep(random()/10+1)
         return None
@@ -139,7 +152,7 @@ def get_shareholder_data():
     errorlist=[]
     for code in stocklist:
         try:
-            get_single_shareholder_data(code,proxy=0)
+            get_single_shareholder_data(code,ser='both',proxy=0)
         except Exception as e:
             print(e)
             errorlist.append(code)

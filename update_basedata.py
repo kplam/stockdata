@@ -17,11 +17,11 @@ http://data.eastmoney.com/gstc/search.ashx?SortType=SECURITYCODE&SortRule=1&Page
 
 主营分析：http://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/BusinessAnalysisAjax?code=sh603533
 """
-def update_embasedata(stocklist,ser='local',proxy=0):
+def update_embasedata(stocklist,ser='both',proxy=0):
     Errorlist=[]
-    if ser == 'server':
-        conn = serverconn()
-    elif ser =='local':
+    if ser == 'server' or ser =='both':
+        conns = serverconn()
+    if ser == 'local' or ser == 'both':
         conn = localconn()
     for i in range(len(stocklist)):
         sqli = "UPDATE  `basedata` SET  `证券简称` = %s,  `公司名称` = %s,  `英文名称` = %s, " \
@@ -47,9 +47,14 @@ def update_embasedata(stocklist,ser='local',proxy=0):
             stockdata.append(str(point))
             stockdata.append(symbol[:-2])
             print("BASEDATA:",symbol[:-2], sName,i+1,"/",len(stocklist),round((i +1)/ (len(stocklist))*100,2))
-            cur = conn.cursor()
-            cur.execute(sqli, tuple(stockdata))
-            conn.commit()
+            if ser == 'local' or ser == 'both':
+                cur = conn.cursor()
+                cur.execute(sqli, tuple(stockdata))
+                conn.commit()
+            if ser == 'server' or ser == 'both':
+                curs = conns.cursor()
+                curs.execute(sqli, tuple(stockdata))
+                conns.commit()
             sleep((random() / 10 + 1))
         except Exception as e:
             print(symbol[:-2],sName,e)
@@ -63,5 +68,5 @@ if __name__ == "__main__" :
     # stocklist = pd.read_sql(sql,localconn())
     times_retry = 10
     while len(stocklist) > 0 and times_retry != 0:
-        stocklist = update_embasedata(stocklist, 'local', 0)
+        stocklist = update_embasedata(stocklist, 'both', 0)
         times_retry -= 1

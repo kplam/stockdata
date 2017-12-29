@@ -5,24 +5,32 @@ Created on 15:20:00 2017-12-06
 
 @author: kplam
 """
+
 from kpfunc.spyder import myspyder
 from kpfunc.getdata import localconn,serverconn
 from kpfunc.function import path
 from time import sleep
 from random import random
-import datetime
+import datetime,json
 import pandas as pd
-import json
 
-def notices(page,conn=localconn(),proxy=0):
+
+
+def notices(page,ser='both',proxy=0):
     today=datetime.date.today() #- datetime.timedelta(days=2)
     sleep(random()/10*2+0.5)
     print("NOTICE：page",page)
     try:
+
+        if ser == 'local' or ser == 'both':
+            conn = localconn()
+        if ser == 'server' or ser == 'both':
+            conns = serverconn()
+
         url = "http://data.eastmoney.com/notices/getdata.ashx?FirstNodeType=0&CodeType=1&PageIndex=%s&PageSize=1000"%(page)
         html = myspyder(url,proxy=proxy).content
-        # print(html)
         js =json.loads(html.decode('gbk')[7:-1])['data']
+
         table=pd.DataFrame()
         for i in range(len(js)):
             output =js[i]
@@ -46,16 +54,25 @@ def notices(page,conn=localconn(),proxy=0):
                                       'TRADEMARKET':'market','COLUMNNAME':'type'})
         table=table[table['eutime']>=today]
         table.to_csv(path()+'/data/notice/'+str(today)+'.csv',encoding='utf-8')
+
+
         sql_check="select `infocode` from `notice` where `eutime`>'%s'"%(today-datetime.timedelta(days=1))
         list_infocode=pd.read_sql(sql_check,conn)['infocode'].values
+
+
         for line in table.values:
             param = [str(ele) for ele in line]
             if param[2] not in list_infocode:
                 sql_updae =" insert ignore into `notice` (`date`, `title`, `infocode`, `eutime`, `url`, `code`, `name`, " \
                            "`security_type`, `market`, `type`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                cur = conn.cursor()
-                cur.execute(sql_updae,tuple(param))
-                conn.commit()
+                if ser == 'local' or ser =='both':
+                    cur = conn.cursor()
+                    cur.execute(sql_updae,tuple(param))
+                    conn.commit()
+                if ser == 'server' or ser == 'both':
+                    curs = conns.cursor()
+                    curs.execute(sql_updae,tuple(param))
+                    conns.commit()
             else:
                 pass
         # return None
@@ -67,7 +84,7 @@ if __name__ =="__main__":
     pages = range(1,2)[::-1]
     times_retry = 3
     while len(pages) != 0 and times_retry != 0 :
-        pages = [notices(page) for page in pages]
+        pages = [notices(page,ser='both') for page in pages]
         pages = list(set(pages))
         pages.remove(None)
         times_retry -= 1

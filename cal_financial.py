@@ -9,7 +9,7 @@ import pandas as pd
 import datetime
 
 class cal_financial:
-    def __init__(self,conn = serverconn()):
+    def __init__(self,conn = localconn()):
         """
         :param conn: set sql conn (localconn()/serverconn())
         """
@@ -18,6 +18,10 @@ class cal_financial:
         self.list_reportdate = pd.read_sql(sql_reportdate, self.conn)
 
     def updatesql(self):
+        """
+        updatesql before use other function
+        :return:
+        """
         df_result = pd.DataFrame()
         sql_quarter = "SELECT DISTINCT `报表日期` FROM `financial` ORDER BY `报表日期` DESC "
         Quarter = pd.read_sql(sql_quarter, self.conn)['报表日期'].astype('str')
@@ -103,6 +107,12 @@ class cal_financial:
         return result
 
     def custom(self,sfield,swhere):
+        """
+        get param from url
+        :param sfield:
+        :param swhere:
+        :return: json
+        """
         sql_custom = "select " + sfield + " from `financial` where " + swhere
         df_custom = pd.read_sql(sql_custom,self.conn)
         df_custom['报表日期']=df_custom['报表日期'].astype('str')

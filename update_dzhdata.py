@@ -261,15 +261,15 @@ if __name__ == '__main__' :
     # dfErrorList2 = pd.DataFrame( control_errorlist)
     # dfErrorList2.to_csv(path() + '/error/dzhcontrol.csv')
     # print(dfErrorList2)
-    # capitalchange_errorlist = update_capitalchange(ser='both') # 改抬头，删字段，数字格式
-    # dfErrorList3 = pd.DataFrame(capitalchange_errorlist)
-    # dfErrorList3.to_csv(path() + '/error/capitalchange.csv')
-    # print(dfErrorList3)
+    capitalchange_errorlist = update_capitalchange(ser='both') # 改抬头，删字段，数字格式
+    dfErrorList3 = pd.DataFrame(capitalchange_errorlist)
+    dfErrorList3.to_csv(path() + '/error/capitalchange.csv')
+    print(dfErrorList3)
     # buyback_errorlist = update_buyback(ser='both') # 改抬头，删字段，数字格式，文件编码
     # dfErrorList4 = pd.DataFrame(buyback_errorlist)
     # dfErrorList4.to_csv(path() + '/error/update_buyback.csv')
     # print(dfErrorList4)
-    incentive_errorlist = update_incentive(ser='both') # 改抬头，删字段，数字格式，文件编码
-    dfErrorList5 = pd.DataFrame(incentive_errorlist)
-    dfErrorList5.to_csv(path() + '/error/update_incentive.csv')
-    print(dfErrorList5)
+    # incentive_errorlist = update_incentive(ser='both') # 改抬头，删字段，数字格式，文件编码
+    # dfErrorList5 = pd.DataFrame(incentive_errorlist)
+    # dfErrorList5.to_csv(path() + '/error/update_incentive.csv')
+    # print(dfErrorList5)

@@ -7,7 +7,8 @@ from math import isnan
 
 local = localconn()
 server = serverconn()
-today = datetime.date.today() #-datetime.timedelta(days=2)
+# today = datetime.date.today() #-datetime.timedelta(days=1)
+today = datetime.date(2018,1,5)
 
 def sync(sdate):
     try:

@@ -12,6 +12,7 @@ from numpy import isnan
 import datetime
 import pandas as pd
 import numpy as np
+from tenacity import retry,stop_after_attempt
 
 
 class calc:
@@ -149,17 +150,23 @@ class calc:
         df_adj_update = df_adj[['code', 'date', 'adjfactor', 'adjcump']]
         sql_turncate ="TRUNCATE `dayline_tmp`"
         if self.ser == 'local' or self.ser == 'both':
-            cur = self.con.cursor()
-            cur.execute(sql_turncate)
-            self.con.commit()
-            df_adj_update.to_sql('dayline_tmp', con=self.con, flavor='mysql', schema='stockdata', if_exists='append',
-                                 index=False, dtype=None)
+            try:
+                cur = self.con.cursor()
+                cur.execute(sql_turncate)
+                self.con.commit()
+                df_adj_update.to_sql('dayline_tmp', con=self.con, flavor='mysql', schema='stockdata', if_exists='append',
+                                     index=False, dtype=None)
+            except Exception as e:
+                print("local:",e)
         if self.ser == 'server' or self.ser == 'both':
-            curs = self.cons.cursor()
-            curs.execute(sql_turncate)
-            self.cons.commit()
-            df_adj_update.to_sql('dayline_tmp', con=self.cons, flavor='mysql', schema='stockdata', if_exists='append',
-                                 index=False, dtype=None)
+            try:
+                curs = self.cons.cursor()
+                curs.execute(sql_turncate)
+                self.cons.commit()
+                df_adj_update.to_sql('dayline_tmp', con=self.cons, flavor='mysql', schema='stockdata', if_exists='append',
+                                     index=False, dtype=None)
+            except Exception as e:
+                print("server:",e)
         # cur = self.con.cursor()
         # cur.execute(sql_turncate)
         # self.con.commit()
@@ -169,7 +176,8 @@ class calc:
 
     def tamodel(self):
         print("CALC:正在计算技术分析模型...")
-        List_TA_Result=[]
+        List_TA_Result_1=[]
+        List_TA_Result_2=[]
         sql_updatedayline = "select * from `dayline` WHERE `date`='%s'"%(self.today)
         sql_updateftsplit = "select * from `ftsplit` WHERE `date`='%s'"%(self.today)
         df_updatedayline = pd.read_sql(sql_updatedayline,self.con)
@@ -219,6 +227,7 @@ class calc:
                 df['jll'], df['jlh'] = jl(dayline_open, dayline_close, dayline_high, dayline_low,dayline_amo)
                 df['js'] = js(dayline_open, dayline_close, dayline_high, dayline_low, dayline_amo)
                 df['kprsi'] = kprsi(dayline_close)
+                df['diff'],df['dea'], df['hist']=macd(dayline_close)
                 df = df[len(df) - 2:]
                 df = df.reset_index(drop=True)
 
@@ -231,12 +240,18 @@ class calc:
                         jlh_cp = df.get_value(j, 'jlh')
                         kprsi_cp = df.get_value(j, 'kprsi')
                         if close_cp_ref < jshort_cp and close_cp > jshort_cp and close_cp > jlh_cp and close_cp > kprsi_cp:
-                            List_TA_Result.append(symbol)
-
-
+                            List_TA_Result_1.append(symbol)
+                    if j>0 and isnan(df.get_value(j,'hist')) != True:
+                        diff = df.get_value(j,'diff')
+                        dea = df.get_value(j,'dea')
+                        diffref = df.get_value(j-1,'diff')
+                        dearef = df.get_value(j-1,'dea')
+                        if diff > 0 and diff >dea and diffref<dearef:
+                            List_TA_Result_2.append(symbol)
                 # ========= error output ============ #
-        return List_TA_Result
+        return List_TA_Result_1,List_TA_Result_2
 
+    @retry(stop=stop_after_attempt(3))
     def amorank(self):
         df_data = self.df_dayline
         df_data = df_data.sort_values(by=['amo'], ascending=False)
@@ -245,7 +260,7 @@ class calc:
         df_data = df_data.reset_index(drop=True)
         result = []
         df_list = calc.adjfactor(self)
-        taresultlist = calc.tamodel(self)
+        taresultlist1,taresultlist2 = calc.tamodel(self)
         # print(taresultlist)
         print("CALC:正在按成交额进行排序...")
         for i in range(len(df_data)):
@@ -261,20 +276,36 @@ class calc:
             else:
                 ARaise = np.nan
             percentage = df_list[df_list['code']==code]['percentage'].values[0]
-            taresult = '1' if code in taresultlist else '0'
+
+            if code in taresultlist1 and code in taresultlist2:
+                taresult = '1,2'
+            elif code in taresultlist1 and code not in taresultlist2:
+                taresult = '1'
+            elif code in taresultlist2 and code not in taresultlist1:
+                taresult = '2'
+            else:
+                taresult = '0'
+
+           # taresult = '1,2' if code in taresultlist1  else '0'
             result.append([code, date, fAmorank, ARaise,percentage,taresult])
         result=pd.DataFrame(result,columns=['code','date','amorank','araise','percentage','taresult'])
         print("CALC:正在将成交量信息写入数据库...")
         errorlist = []
-        try:
-            if self.ser == 'local' or self.ser == 'both':
+        if self.ser == 'local' or self.ser == 'both':
+            try:
                 result.to_sql('usefuldata',self.con,flavor='mysql',schema='stockdata',if_exists='append',
                               index=False,chunksize=10000)
-            if self.ser == 'server' or self.ser == 'both':
+            except Exception as e:
+                print("local",e)
+                errorlist.append(e)
+
+        if self.ser == 'server' or self.ser == 'both':
+            try:
                 result.to_sql('usefuldata', self.cons, flavor='mysql', schema='stockdata', if_exists='append',
                               index=False, chunksize=10000)
-        except Exception as e:
-            errorlist.append(e)
+            except Exception as e:
+                print("server", e)
+                errorlist.append(e)
         dferrorlist = pd.DataFrame(errorlist)
         dferrorlist.to_csv(path()+'/error/amorank.csv')
         return result

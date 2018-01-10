@@ -25,7 +25,7 @@ def mo(pages,ser='both',proxy=0):
         print("MO:Page:",page)
 
         try:
-            url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=GG&sty=GGMX&p=%s&ps=5000"%(page)
+            url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=GG&sty=GGMX&p=%s&ps=1000"%(page)
             html = myspyder(url,proxy=proxy).content.decode('utf-8')[1:-1]
             sleep(random()/10+3)
             table = re.findall(r'\"([^"]+)\"',html)

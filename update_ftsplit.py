@@ -12,7 +12,7 @@ from kpfunc.getdata import *
 from kpfunc.spyder import myspyder
 
 def split_szfh(iLong,Quarter,proxy=0):
-    today = datetime.date.today()
+    today = datetime.date.today()-datetime.timedelta(days=5)
     try:
         url = "http://dcfm.eastmoney.com/EM_MutiSvcExpandInterface/api/js/get?type=DCSOBS&token=70f12f2f4f091e459a279469fe49eca5&p=1&ps=%s&sr=-1&st=SZZBL&filter=(ReportingPeriod=^%s^)" % (
         iLong, Quarter)
@@ -28,6 +28,7 @@ def split_szfh(iLong,Quarter,proxy=0):
             table = table[table['date'] != '-']
             table['date'] = table['date'].astype('datetime64[ns]')
             table = table[table['date'] == today]
+            print(table)
             return table
         else:
             return pd.DataFrame()

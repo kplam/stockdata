@@ -162,10 +162,23 @@ def run_caldatas():
               '2018-06-16','2018-06-17','2018-06-18','2018-09-22','2018-09-23','2018-09-24','2018-10-01','2018-10-02',
               '2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07']
     if str(datetime.date.today()) not in holiday:
-        try:
-            calc(ser='both').amorank()
-        except Exception as e:
-            print("caldatas:",e)
+        sql = "select distinct `date` from `usefuldata` where `date` ='%s'" % (str(datetime.date.today()))
+        dfcheckl = pd.read_sql(sql, localconn())
+        dfchecks = pd.read_sql(sql, serverconn())
+
+        times_retry= 10
+        while (dfcheckl.empty == True or dfchecks.empty == True) and times_retry != 0:
+            try:
+                calc(ser='both').amorank()
+            except Exception as e:
+                if times_retry == 1:
+                    print("caldatas:", e)
+                else:
+                    pass
+            finally:
+                dfcheckl = pd.read_sql(sql, localconn())
+                dfchecks = pd.read_sql(sql, serverconn())
+                times_retry -= 1
     gc.collect()
 
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=16,minute=00,id='run_dayline')
@@ -175,21 +188,45 @@ def run_dayline():
               '2018-06-16','2018-06-17','2018-06-18','2018-09-22','2018-09-23','2018-09-24','2018-10-01','2018-10-02',
               '2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07']
     if str(datetime.date.today()) not in holiday:
-        try:
-            update_bar().update_stock()
-            print("Update stock daybar done!")
-            update_bar().update_index()
-            print("Update index daybar done!")
-            update_bar(conn=serverconn()).update_stock()
-            print("Update stock daybar done!")
-            update_bar(conn=serverconn()).update_index()
-            print("Update index daybar done!")
-            update_bar().update_stock_status()
-            print('Update Stock Status Done!')
-            update_bar(conn=serverconn()).update_stock_status()
-            print('Update Stock Status Done!')
-        except Exception as e:
-            print("Dayline:",e)
+        local = localconn()
+        server = serverconn()
+        sql="select distinct `date` from `dayline` where `date` ='%s'"%(str(datetime.date.today()))
+        dfchecklocal =pd.read_sql(sql,local)
+        times_retry_local =10
+        while dfchecklocal.empty==True and times_retry_local != 0:
+            try:
+                print("Updating Local Daybar...")
+                daybarlocal = update_bar(conn=local)
+                daybarlocal.update_stock()
+                daybarlocal.update_index()
+                daybarlocal.update_stock_status()
+            except Exception as e:
+                if times_retry_local == 1:
+                    print("Dayline:", e)
+                else:
+                    pass
+            finally:
+                dfchecklocal = pd.read_sql(sql, localconn())
+                times_retry_local -= 1
+
+        dfcheckserver =pd.read_sql(sql,serverconn())
+        times_retry_server = 10
+        while dfcheckserver.empty == True and times_retry_server != 0:
+            try:
+                print("Updating Server Daybar...")
+                daybarserver = update_bar(conn=server)
+                daybarserver.update_stock()
+                daybarserver.update_index()
+                daybarserver.update_stock_status()
+            except Exception as e:
+                if times_retry_local == 1:
+                    print("Dayline:", e)
+                else:
+                    pass
+            finally:
+                dfcheckserver = pd.read_sql(sql, serverconn())
+                times_retry_server -= 1
+        print("Update Daybar Done!")
     gc.collect()
 
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=17,minute=45,id='run_tdx')
@@ -271,4 +308,5 @@ def run_basedata_all():
 
 if __name__ == '__main__':
     warnings.filterwarnings('ignore')
+    print("Start!")
     BS.start()

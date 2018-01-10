@@ -118,9 +118,9 @@ class update_bar:
             self.conn.commit()
 
 if __name__ == '__main__' :
-    update_bar(conn=localconn()).update_stock()
+    update_bar(conn=serverconn()).update_stock()
     print("DAYBAR:Update stock daybar done!")
-    update_bar(conn=localconn()).update_index()
+    update_bar(conn=serverconn()).update_index()
     print("DAYBAR:Update index daybar done!")
-    update_bar(conn=localconn()).update_stock_status()
+    update_bar(conn=serverconn()).update_stock_status()
     print("DAYBAR:Update Stock Status Done!")

@@ -27,7 +27,7 @@ def get_single_shareholder_data(code,ser='both',proxy=0):
     # rqs.keep_alive = False
     # rqs_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36'}
     try:
-        print(code[0:6])
+        # print(code[0:6])
         rqs_url = "http://soft-f9.eastmoney.com/soft/gp51.php?code=%s&exp=1" % (code)
         html = myspyder(rqs_url,proxy=proxy)
         with open("./data/cirholder/"+code[0:6]+".xls","wb") as f51:

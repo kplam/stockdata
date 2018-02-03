@@ -59,8 +59,9 @@ class update_bar:
             except:
                 pass
         dayline = pd.DataFrame(table,columns=['code','name','open','preclose','close','high','low','e','f','vol','amo','g','h','I','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','date','aa','ab'])
-        dayline = dayline[['code','date','high','open','low','close','vol','amo']]
+        dayline = dayline[['code','date','preclose','high','open','low','close','vol','amo']]
         dayline['date'] = dayline['date'].astype('datetime64')
+        dayline['preclose'] = dayline['preclose'].astype('float32')
         dayline['close'] = dayline['close'].astype('float32')
         dayline['high'] = dayline['high'].astype('float32')
         dayline['low'] = dayline['low'].astype('float32')
@@ -70,29 +71,38 @@ class update_bar:
         dayline = dayline[dayline['vol']>0]
         return dayline
 
-    def update_index(self):
+    def todf_index(self):
         self.urllist = []
         self.htmllist = []
         self.get_urllist('index')
         self.get_data(proxy=0)
         df_index = self.to_df()
+        return df_index
+
+    def update_index(self):
+        df_index =self.todf_stock()
+        del df_index['preclose']
         try:
             df_index.to_sql('indexdb',self.conn,flavor='mysql',schema='stockdata',if_exists='append',index=False)
         except Exception as e:
             print(e)
         return df_index
 
-    def update_stock(self):
+    def todf_stock(self):
         self.urllist = []
         self.htmllist = []
         self.get_urllist('stock')
         self.get_data(proxy=0)
         df_stock = self.to_df()
+        return df_stock
+
+    def update_stock(self):
+        df_stock = self.todf_stock()
+        del df_stock['preclose']
         try:
-            df_stock.to_sql('dayline',self.conn,flavor='mysql',schema='stockdata',if_exists='append',index=False)
+            df_stock.to_sql('dayline', self.conn, flavor='mysql', schema='stockdata', if_exists='append', index=False)
         except Exception as e:
             print(e)
-        return df_stock
 
     def update_stock_status(self):    #  update stock status
         stocklist = update_bar().stocklist

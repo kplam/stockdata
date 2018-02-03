@@ -5,7 +5,7 @@ Created on 15:20:00 2017-11-22
 @author: kplam
 """
 from kpfunc.getdata import localconn,serverconn
-from kpfunc.function import path,gbk_to_utf8
+from kpfunc.function import path,gbk_to_utf8,getpinyin
 import csv
 import pandas as pd
 
@@ -45,6 +45,7 @@ def update_dzhconcept(ser):
                 Errorlist.append((row['证券代码'],e))
     f.close()
     return Errorlist
+
 def update_dzhcontrol(ser):
     """
     :param ser: server,local or both
@@ -81,6 +82,7 @@ def update_dzhcontrol(ser):
                 Errorlist.append((row['证券代码'], e))
     f.close()
     return Errorlist
+
 def update_capitalchange(ser):
     """
     :param ser: server,local or both
@@ -131,6 +133,7 @@ def update_capitalchange(ser):
             Errorlist.append((param[0], e))
     # f.close()
     return Errorlist
+
 def update_buyback(ser):
     """
         :param ser: server,local or both
@@ -196,6 +199,7 @@ def update_buyback(ser):
     #         Errorlist.append((param[0], e))
     # f.close()
     return Errorlist
+
 def update_incentive(ser):
     """
     :param ser: server,local or both
@@ -251,6 +255,48 @@ def update_incentive(ser):
     #         Errorlist.append((param[0], e))
     # # f.close()
     return Errorlist
+
+def update_stocklist(ser='both'):
+    table = pd.read_csv(path()+ "/data/dzhdata/stocklist.csv", dtype='object').values
+    stocklist = pd.read_sql("select * from `stocklist`",localconn())['证券简称'].values
+    Errorlist = []
+    for row in table:
+
+        if row[1] in stocklist:
+            pass
+        else:
+            print(row[1])
+            sql = "update `stocklist` set `证券简称`=%s,`拼音缩写`=%s WHERE `证券代码`=%s"
+            pinyin = getpinyin(row[1])
+
+            pinyin = pinyin if '银行' not in row[1] else pinyin.replace('YX','YH')
+            param = [row[1],pinyin,row[0]]
+            print(param)
+            # try:
+            if ser == "server":
+                conn = serverconn()
+                cur = conn.cursor()
+                cur.execute(sql, tuple(param))
+                conn.commit()
+            elif ser == "local":
+                conn = localconn()
+                cur = conn.cursor()
+                cur.execute(sql, tuple(param))
+                conn.commit()
+            else:
+                conn1 = serverconn()
+                cur = conn1.cursor()
+                cur.execute(sql, tuple(param))
+                conn1.commit()
+                conn2 = localconn()
+                cur = conn2.cursor()
+                cur.execute(sql, tuple(param))
+                conn2.commit()
+            # except Exception as e:
+            #     print(param[0], e)
+            #     Errorlist.append((param[0], e))
+    return Errorlist
+
 if __name__ == '__main__' :
     gbk_to_utf8()
     # concept_errorlist = update_dzhconcept(ser='both') # 注意导出数据是否完整 文件编码
@@ -273,3 +319,4 @@ if __name__ == '__main__' :
     # dfErrorList5 = pd.DataFrame(incentive_errorlist)
     # dfErrorList5.to_csv(path() + '/error/update_incentive.csv')
     # print(dfErrorList5)
+    update_stocklist(ser='both')

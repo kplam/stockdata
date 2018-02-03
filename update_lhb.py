@@ -56,7 +56,7 @@ def lhb(ser='both'):
             if len(lhb_list) ==0:
                 errorlist.append((str(date),0))
             for code in lhb_list:
-                print(str(date),code)
+                # print(str(date),code)
                 tmp_lhbdetail = get_lhbdetail(code,str(date),proxy=0)
                 # tmp_lhbdetail =tmp_lhbdetail.drop_duplicates()
                 df_lhbdetail = pd.concat((tmp_lhbdetail,df_lhbdetail))

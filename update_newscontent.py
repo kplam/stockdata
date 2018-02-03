@@ -58,7 +58,7 @@ def news_content(ser='both'):
             if newscontent == list_content[i]:
                 pass
             else:
-                print("NEW:",list_title[i])
+                # print("NEW:",list_title[i])
                 # print(newscontent)
                 sql_update_newscontent = "update `news` set `content`=%s WHERE `link`=%s"
                 param = (newscontent,list_url[i])

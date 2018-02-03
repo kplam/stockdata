@@ -24,11 +24,13 @@ from cal_datas import calc
 from update_spo import spo
 from update_blocktrade import get_blocktrade
 from update_lhb import lhb
+from update_zzd import get_zzd,get_urllist_one
 from update_managerial_ownership import mo
 from update_stocklist import update_stocklist
 from update_forecast import get_forecast
 from update_tickdata import update_tick
 from statistics import cal_statistics
+from email_warning import sendmail
 
 
 BS = BlockingScheduler()
@@ -101,10 +103,26 @@ def run_lhb():
               '2018-06-16','2018-06-17','2018-06-18','2018-09-22','2018-09-23','2018-09-24','2018-10-01','2018-10-02',
               '2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07']
     if str(datetime.date.today()) not in holiday:
-        try:
-            lhb(ser='both')
-        except Exception as e:
-            print("LHB:",e)
+        sqlcheck = "select `date` from `lhb` WHERE `date`='%s' LIMIT 1"%(datetime.date.today())
+        scheck = pd.read_sql(sqlcheck,serverconn())
+        lcheck = pd.read_sql(sqlcheck,localconn())
+        times_retry = 5
+        while (scheck.empty == True or lcheck.empty == True) and times_retry != 0:
+            try:
+                if scheck.empty == True and lcheck.empty == True:
+                    lhb(ser='both')
+                elif scheck.empty == True and lcheck.empty == False:
+                    lhb(ser='server')
+                elif scheck.empty == False and lcheck.empty == True:
+                    lhb(ser='local')
+            except Exception as e:
+                if times_retry == 1:
+                    sendmail("LHB Update Failed", str(e))
+                print("LHB:", e)
+            finally:
+                scheck = pd.read_sql(sqlcheck, serverconn())
+                lcheck = pd.read_sql(sqlcheck, localconn())
+                times_retry -= 1
     gc.collect()
 
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=19,minute=00,id='run_blocktrade')
@@ -115,10 +133,26 @@ def run_blocktrade():
               '2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07']
     if str(datetime.date.today()) not in holiday:
         list_date = [datetime.date.today()]
-        try:
-            get_blocktrade(list_date,ser='both',proxy=0)
-        except Exception as e:
-            print("blocktrade:",e)
+        sqlcheck = "select `交易日期` from `blocktrade` WHERE `交易日期`='%s' LIMIT 1"%(str(list_date[0]))
+        scheck = pd.read_sql(sqlcheck,serverconn())
+        lcheck = pd.read_sql(sqlcheck,localconn())
+        times_retry = 5
+        while (scheck.empty == True or lcheck.empty == True) and times_retry != 0:
+            try:
+                if scheck.empty == True and lcheck.empty == True:
+                    get_blocktrade(list_date,ser='both',proxy=0)
+                elif scheck.empty ==True and lcheck.empty == False:
+                    get_blocktrade(list_date,ser='server',proxy=0)
+                elif scheck.empty ==False and lcheck.empty == True:
+                    get_blocktrade(list_date,ser='local',proxy=0)
+            except Exception as e:
+                if times_retry == 1:
+                    sendmail("Blocktrade Update Failed",str(e))
+                print("blocktrade:",e)
+            finally:
+                scheck = pd.read_sql(sqlcheck, serverconn())
+                lcheck = pd.read_sql(sqlcheck, localconn())
+                times_retry -= 1
     gc.collect()
 
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour='18,20,22',minute=10,id='run_spo')
@@ -149,10 +183,36 @@ def get_statistics():
               '2018-06-16','2018-06-17','2018-06-18','2018-09-22','2018-09-23','2018-09-24','2018-10-01','2018-10-02',
               '2018-10-03','2018-10-04','2018-10-05','2018-10-06','2018-10-07']
     if str(datetime.date.today()) not in holiday:
-        try:
-            cal_statistics(ser='both')
-        except Exception as e:
-            print("statistics:",e)
+        sqlcheck = "select * from `statistics` WHERE `date` = '%s'"%(str(datetime.date.today()))
+        sdfcheck = pd.read_sql(sqlcheck,serverconn())
+        ldfcheck = pd.read_sql(sqlcheck,localconn())
+        times_retry = 5
+        while (sdfcheck.empty == True or ldfcheck.empty == True) and times_retry !=0:
+            try:
+                if sdfcheck.empty == True and ldfcheck.empty == True:
+                    cal_statistics(ser='both')
+                elif sdfcheck.empty == True and ldfcheck.empty == False:
+                    cal_statistics(ser='server')
+                elif sdfcheck.empty == False and ldfcheck.empty == True:
+                    cal_statistics(ser='local')
+            except Exception as e:
+                if times_retry == 1:
+                    sendmail("Statistics Update Error!",str(e))
+                print("statistics:",e)
+            finally:
+                sdfcheck = pd.read_sql(sqlcheck, serverconn())
+                ldfcheck = pd.read_sql(sqlcheck, localconn())
+                times_retry -= 1
+        if sdfcheck['ontrade'][0] <3000 or ldfcheck['ontrade'][0]<3000 or sdfcheck['ontrade'][0] != ldfcheck['ontrade'][0]:
+            subject = '【注意】Statistics Error'
+            content = '统计出错，请马上检查数据！'
+            if sdfcheck['ontrade'][0] <3000:
+                subject = subject + ' Server'
+            if ldfcheck['ontrade'][0]<3000:
+                subject = subject + ' local'
+            if sdfcheck['ontrade'][0] != ldfcheck['ontrade'][0]:
+                content = content + ' 两地数据不一致!'
+            sendmail(subject,content)
     gc.collect()
 
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=16,minute=30,id='run_caldatas')
@@ -169,9 +229,15 @@ def run_caldatas():
         times_retry= 10
         while (dfcheckl.empty == True or dfchecks.empty == True) and times_retry != 0:
             try:
-                calc(ser='both').amorank()
+                if dfcheckl.empty == True and dfchecks.empty == True:
+                    calc(ser='both').amorank()
+                elif dfcheckl.empty == True and dfchecks.empty == False:
+                    calc(ser='local').amorank()
+                elif dfcheckl.empty == False and dfchecks.empty == True:
+                    calc(ser='server').amorank()
             except Exception as e:
                 if times_retry == 1:
+                    sendmail("Cal_datas Failed",str(e))
                     print("caldatas:", e)
                 else:
                     pass
@@ -202,6 +268,7 @@ def run_dayline():
                 daybarlocal.update_stock_status()
             except Exception as e:
                 if times_retry_local == 1:
+                    sendmail("Local Dayline Update Failed",str(e))
                     print("Dayline:", e)
                 else:
                     pass
@@ -220,6 +287,7 @@ def run_dayline():
                 daybarserver.update_stock_status()
             except Exception as e:
                 if times_retry_local == 1:
+                    sendmail("Server Dayline Update Failed", str(e))
                     print("Dayline:", e)
                 else:
                     pass
@@ -229,6 +297,7 @@ def run_dayline():
         print("Update Daybar Done!")
     gc.collect()
 
+"""
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=17,minute=45,id='run_tdx')
 def run_tdx():
     holiday =['2017-12-30','2017-12-31','2018-01-01','2018-02-15','2018-02-16','2018-02-17','2018-02-18','2018-02-19',
@@ -242,6 +311,7 @@ def run_tdx():
         except Exception as e:
             print("tdx:",e)
     gc.collect()
+"""
 
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour=15,minute=30,id='run_ftsplit')
 def run_ftsplit():
@@ -249,6 +319,14 @@ def run_ftsplit():
         ftsplit(ser='both')
     except Exception as e:
         print("ftsplit:",e)
+    gc.collect()
+
+@BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour='19,20,21,22',minute='*/15',id='run_zzd')
+def run_zzd():
+    try:
+        get_zzd(links=get_urllist_one(), check=1, ser='both')
+    except Exception as e:
+        print("ZZD:",e)
     gc.collect()
 
 @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri',hour='9,10,11,13,14,15',minute='*/2',id='run_unusual')
@@ -284,12 +362,7 @@ def run_mainbusiness():
     from kpfunc.getdata import get_stocklist_prefix
     try:
         stocklist = get_stocklist_prefix('sh', 'sz', 1)
-        times_retry = 3
-        while len(stocklist) != 0 and times_retry != 0:
-            stocklist = mainbusiness(stocklist=stocklist,ser='both',proxy= 0)
-            times_retry -= 1
-        error = pd.DataFrame(stocklist)
-        error.to_csv(path() + '/error/update_mainbusiness.csv')
+        mainbusiness(stocklist=stocklist)#,ser='both',proxy= 0)
     except Exception as e:
         print("MAINBUSINESS:",e)
     gc.collect()

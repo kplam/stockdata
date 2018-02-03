@@ -25,7 +25,7 @@ def spo(ser='both',proxy=0):
     print("SPO: Running...")
     errorlist = []
     today = datetime.date.today() - datetime.timedelta(days=100)
-    url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=5000&st=5"
+    url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=1000&st=5"
     html = myspyder(url,proxy=proxy).content
     table = eval(html.decode('utf-8'))
     list =[]
@@ -54,7 +54,6 @@ def spo(ser='both',proxy=0):
                 else:
                     params.append(None)
 
-
             if ser == 'local' or ser == 'both':
                 conn = localconn()
                 cur = conn.cursor()
@@ -79,6 +78,6 @@ def spo(ser='both',proxy=0):
 "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=50&st=5"
 """
 if __name__ == '__main__':
-    errorlist = spo(ser='local',proxy=0)
+    errorlist = spo(ser='both',proxy=0)
     df = pd.DataFrame(errorlist)
     df.to_csv(path()+'/error/update_spo.csv')

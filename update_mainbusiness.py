@@ -16,7 +16,10 @@ import json,warnings,datetime
 from gevent import monkey;monkey.patch_all()
 from gevent.pool import Pool
 import gevent
+from tenacity import retry
+from tenacity import stop_after_attempt
 
+@retry(stop=stop_after_attempt(7))
 def update_mb_single(code):
     ser='both'
     proxy=0
@@ -113,9 +116,9 @@ def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1)):
 if __name__ == "__main__":
     warnings.filterwarnings('ignore')
     stocklist = get_stocklist_prefix('sh','sz',1)
-    times_retry = 3
-    while len(stocklist) != 0 and times_retry != 0:
-        stocklist = mainbusiness(stocklist)
-        times_retry -= 1
+    # times_retry = 3
+    # while len(stocklist) != 0 and times_retry != 0:
+    stocklist = mainbusiness(stocklist)
+    # times_retry -= 1
     error=pd.DataFrame(stocklist)
     error.to_csv(path()+'/error/update_mainbusiness.csv')

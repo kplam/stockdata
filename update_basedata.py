@@ -46,7 +46,7 @@ def update_embasedata(stocklist,ser='both',proxy=0):
             del point['style']
             stockdata.append(str(point))
             stockdata.append(symbol[:-2])
-            print("BASEDATA:",symbol[:-2], sName,i+1,"/",len(stocklist),round((i +1)/ (len(stocklist))*100,2))
+            # print("BASEDATA:",symbol[:-2], sName,i+1,"/",len(stocklist),round((i +1)/ (len(stocklist))*100,2))
             if ser == 'local' or ser == 'both':
                 cur = conn.cursor()
                 cur.execute(sqli, tuple(stockdata))
@@ -64,7 +64,7 @@ def update_embasedata(stocklist,ser='both',proxy=0):
     return Errorlist
 if __name__ == "__main__" :
     stocklist = get_df_stocklist()
-    # sql = "SELECT `证券代码`,`证券简称` FROM `basedata` WHERE `公司名称` IS NULL or `核心题材`='<p>该品种暂无此项记录!</p>'"
+    # sql = "SELECT `证券代码`,`证券简称` FROM `basedata` WHERE `公司名称` IS NULL"#" or `核心题材`='<p>该品种暂无此项记录!</p>'"
     # stocklist = pd.read_sql(sql,localconn())
     times_retry = 10
     while len(stocklist) > 0 and times_retry != 0:

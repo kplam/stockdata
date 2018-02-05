@@ -94,7 +94,7 @@ def cal_code(N=0):
         return list_mo
 
     def zzd(zzddays):
-        sql = "select * from `news` WHERE `source`='zf826.com' and `datetime`>='%s'" % (lastdate-datetime.timedelta(days=zzddays))
+        sql = "select * from `news` WHERE `type`='【早知道】' and `datetime`>='%s'" % (lastdate-datetime.timedelta(days=zzddays))
         df = pd.read_sql(sql, localconn())['content']
         s = ''
         for i in range(len(df)):

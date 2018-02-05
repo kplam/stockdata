@@ -63,9 +63,9 @@ def update_embasedata(stocklist,ser='both',proxy=0):
     Errorlist.to_csv(path()+'/error/update_basedata.csv')
     return Errorlist
 if __name__ == "__main__" :
-    stocklist = get_df_stocklist()
-    # sql = "SELECT `证券代码`,`证券简称` FROM `basedata` WHERE `公司名称` IS NULL"#" or `核心题材`='<p>该品种暂无此项记录!</p>'"
-    # stocklist = pd.read_sql(sql,localconn())
+    # stocklist = get_df_stocklist()
+    sql = "SELECT `证券代码`,`证券简称` FROM `basedata` WHERE `公司名称` IS NULL"#" or `核心题材`='<p>该品种暂无此项记录!</p>'"
+    stocklist = pd.read_sql(sql,localconn())
     times_retry = 10
     while len(stocklist) > 0 and times_retry != 0:
         stocklist = update_embasedata(stocklist, 'both', 0)

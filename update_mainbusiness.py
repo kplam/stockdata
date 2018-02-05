@@ -107,9 +107,8 @@ def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1)):
     gpool=Pool(20)
     tasks = [gpool.spawn(update_mb_single,code) for code in stocklist]
     gevent.joinall(tasks)
-    errorlist = [task.values for task in tasks]
-    print(errorlist)
-    return errorlist
+
+
 """
 主营分析：http://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/BusinessAnalysisAjax?code=sh603533
 """
@@ -118,7 +117,7 @@ if __name__ == "__main__":
     stocklist = get_stocklist_prefix('sh','sz',1)
     # times_retry = 3
     # while len(stocklist) != 0 and times_retry != 0:
-    stocklist = mainbusiness(stocklist)
+    mainbusiness(stocklist)
     # times_retry -= 1
     error=pd.DataFrame(stocklist)
     error.to_csv(path()+'/error/update_mainbusiness.csv')

@@ -72,7 +72,7 @@ def zdtld(stype,sdate,ser='both'):
         print(sdate,e)
         return pd.DataFrame()
 
-def updatesql_all():
+def updatesql_all(ser='both'):
     # sql = "select DISTINCT `date` from indexdb ORDER BY `date` DESC "
     # datelist = pd.read_sql(sql,localconn())['date'].values
     datelist = [datetime.date.today()]
@@ -80,8 +80,8 @@ def updatesql_all():
         if sdate >= datetime.date(2015,9,8):
             stypelist = ['zt','dt']
             for stype in stypelist:
-                zrzdt(stype,sdate)
-                zdtld(stype,sdate)
+                zrzdt(stype,sdate,ser=ser)
+                zdtld(stype,sdate,ser=ser)
             time.sleep(1+random.random())
 
 if __name__ == '__main__':

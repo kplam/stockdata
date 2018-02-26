@@ -97,4 +97,4 @@ def stcn_news(ser='both'):
     dfErrorList.to_csv(path()+'/error/update_news.csv')
 
 if __name__ == '__main__':
-    stcn_news(ser='both')
+    stcn_news(ser='local')

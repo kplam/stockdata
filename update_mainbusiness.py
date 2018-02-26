@@ -21,12 +21,12 @@ from tenacity import stop_after_attempt
 
 @retry(stop=stop_after_attempt(7))
 def update_mb_single(code):
-    ser='both'
+    # ser='both'
     proxy=0
-    if ser == 'local' or ser == 'both':
-        conn = localconn()
-    if ser == 'server' or ser == 'both':
-        conns = serverconn()
+    # if ser == 'local' or ser == 'both':
+    conn = localconn()
+    # if ser == 'server' or ser == 'both':
+    #     conns = serverconn()
     print("MAINBUSINESS:",code)
     url = "http://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/BusinessAnalysisAjax?code="
 
@@ -86,15 +86,15 @@ def update_mb_single(code):
                         params.append(str(param))
                     else:
                         params.append(None)
-                if ser == 'local' or ser == 'both':
+                # if ser == 'local' or ser == 'both':
 
-                    cur =conn.cursor()
-                    cur.execute(sql_update,params)
-                    conn.commit()
-                if ser == 'server' or ser == 'both':
-                    curs =conns.cursor()
-                    curs.execute(sql_update,params)
-                    conns.commit()
+                cur =conn.cursor()
+                cur.execute(sql_update,params)
+                conn.commit()
+                # if ser == 'server' or ser == 'both':
+                #     curs =conns.cursor()
+                #     curs.execute(sql_update,params)
+                #     conns.commit()
         except Exception as e:
             print("MAINBUSINESS:",code,e)
             return code
@@ -119,5 +119,5 @@ if __name__ == "__main__":
     # while len(stocklist) != 0 and times_retry != 0:
     mainbusiness(stocklist)
     # times_retry -= 1
-    error=pd.DataFrame(stocklist)
-    error.to_csv(path()+'/error/update_mainbusiness.csv')
+    # error=pd.DataFrame(stocklist)
+    # error.to_csv(path()+'/error/update_mainbusiness.csv')

@@ -77,4 +77,4 @@ def news_content(ser='both'):
     df_errorlist.to_csv(path()+'/error/update_newscontent.csv')
 
 if __name__ == '__main__':
-    news_content(ser='both')
+    news_content(ser='local')

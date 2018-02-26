@@ -7,166 +7,115 @@ Created on 15:20:00 2017-11-22
 """
 from kpfunc.getdata import get_stocklist_prefix,localconn,serverconn
 from kpfunc.spyder import myspyder
-# from random import random
-import time,warnings
+import warnings,json
 import pandas as pd
-from bs4 import BeautifulSoup as bs
-import numpy as np
-# from gevent.pool import Pool
-# from gevent import monkey
-# import gevent
 
 
+"""
+http://emweb.securities.eastmoney.com/PC_HSF10/ShareholderResearch/ShareholderResearchAjax?code=sh600313
+"""
 
-def get_single_shareholder_data(code,ser='both',proxy=0):
-    if ser == 'local' or ser == 'both':
-        conn = localconn()
-    if ser == 'server' or ser == 'both':
-        conns = serverconn()
-    # rqs = rq.session()
-    # rqs.keep_alive = False
-    # rqs_header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36'}
-    try:
-        # print(code[0:6])
-        rqs_url = "http://soft-f9.eastmoney.com/soft/gp51.php?code=%s&exp=1" % (code)
-        html = myspyder(rqs_url,proxy=proxy)
-        with open("./data/cirholder/"+code[0:6]+".xls","wb") as f51:
-            f51.write(html.content)
-        f51.close()
-        with open("./data/cirholder/"+code[0:6]+".xls", "rb") as f510:
-            soup = bs(f510.read(), 'html.parser')
-            list = soup.select('data')
-            list = [data.text for data in list]
-            list = np.array(list).reshape(int(len(list) / 8), 8)
-            df_gp51 = pd.DataFrame(list[1:],
-                                   columns=['date', 'rank', 'name', 'type', 'quantity', 'percentage', 'change',
-                                            'abh'], )
-            df_gp51['code'] = code[0:6]
-            df_gp51 = df_gp51[['code','date','rank', 'name', 'type', 'quantity', 'percentage', 'change',
-                                            'abh']]
-            newdata_51 = []
-            for i in range(len(df_gp51)):
-                code = df_gp51.get_value(i, 'code')
-                date = df_gp51.get_value(i, 'date')
-                rank = df_gp51.get_value(i, 'rank')
-                name = df_gp51.get_value(i, 'name')
-                type = df_gp51.get_value(i, 'type')
-                quantity = df_gp51.get_value(i, 'quantity')
-                percentage = df_gp51.get_value(i, 'percentage')
-                if percentage =="--":
-                    percentage = '0'
-                else:
-                    percentage = percentage
-                change = df_gp51.get_value(i, 'change')
-                abh = df_gp51.get_value(i, 'abh')
-                quantity = float(quantity.replace(",", ""))
-                if change == "不变":
-                    change = '0'
-                elif change == "新进":
-                    change = quantity
-                else:
-                    change = change
-                newdata_51.append([code, date, rank, name, type, quantity, percentage, change, abh])
-            newdata_51 = pd.DataFrame(newdata_51,
-                                   columns=['code', 'date', 'rank', 'name', 'type', 'quantity', 'percentage',
-                                            'change', 'abh'])
-            newdata_51['quantity'] = newdata_51['quantity'].astype('str')
-            for j in range(len(newdata_51)):
-                sql_gp51 = "INSERT IGNORE INTO `cirholder`(`code`, `date`, `rank`, `name`, `type`, `quantity`, `percentage`," \
-                           " `change`, `abh`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                sql_gp51_param = tuple(newdata_51.iloc[j].values)
-                if ser == 'local' or ser == 'both':
-                    cur = conn.cursor()
-                    cur.execute(sql_gp51, sql_gp51_param)
-                    conn.commit()
-                if ser == 'server' or ser == 'both':
-                    curs = conns.cursor()
-                    curs.execute(sql_gp51, sql_gp51_param)
-                    conns.commit()
-        f510.close()
+def get_shareholder_data(ser='both',stocklist =get_stocklist_prefix('sh','sz',1)):
+    errorlist = []
 
-        rqs_url2 = "http://soft-f9.eastmoney.com/soft/gp50.php?code=%s&exp=1" % (code)
-        html2 = myspyder(rqs_url2,proxy=proxy)
-        with open("./data/shareholder/"+code[0:6]+".xls","wb") as f50:
-            f50.write(html2.content)
-        f50.close()
-        with open("./data/shareholder/"+code[0:6]+".xls", "rb") as f500:
-            soup = bs(f500.read(), 'html.parser')
-            list = soup.select('data')
-            list = [data.text for data in list]
-            list = np.array(list).reshape(int(len(list) / 7), 7)
-            df_gp50 = pd.DataFrame(list[1:],
-                                   columns=['date', 'rank', 'name', 'quantity', 'percentage', 'change', 'type'], )
-            df_gp50['code'] = code[0:6]
-            df_gp50 = df_gp50[['code','date', 'rank', 'name', 'quantity', 'percentage', 'change', 'type']]
-            newdata_50 = []
-            for k in range(len(df_gp50)):
-                code = df_gp50.get_value(k, 'code')
-                date = df_gp50.get_value(k, 'date')
-
-                rank = df_gp50.get_value(k, 'rank')
-                name = df_gp50.get_value(k, 'name')
-                quantity = df_gp50.get_value(k, 'quantity')
-                percentage = df_gp50.get_value(k, 'percentage')
-                if percentage =="--":
-                    percentage = '0'
-                else:
-                    percentage = percentage
-                change = df_gp50.get_value(k, 'change')
-                type = df_gp50.get_value(k,'type')
-                quantity = float(quantity.replace(",", ""))
-                if change == "不变":
-                    change = '0'
-                elif change == "新进":
-                    change = quantity
-                else:
-                    change = change
-                newdata_50.append([code, date, rank, name, quantity, percentage, change, type])
-            newdata_50 = pd.DataFrame(newdata_50,
-                                   columns=['code', 'date', 'rank', 'name', 'quantity', 'percentage',
-                                            'change', 'type'])
-            newdata_50['quantity'] = newdata_50['quantity'].astype('str')
-            for l in range(len(newdata_50)):
-                sql_gp50 = "INSERT IGNORE INTO `shareholder`(`code`, `date`, `rank`, `name`, `quantity`, `percentage`," \
-                           " `change`, `type`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-                sql_gp50_param = tuple(newdata_50.iloc[l].values)
-                if ser == 'local' or ser == 'both':
-                    cur = conn.cursor()
-                    cur.execute(sql_gp50,sql_gp50_param)
-                    conn.commit()
-                if ser == 'server' or ser == 'both':
-                    curs = conns.cursor()
-                    curs.execute(sql_gp50,sql_gp50_param)
-                    conns.commit()
-        f500.close()
-        # time.sleep(random()/10+1)
-        return None
-    except Exception as e:
-        print(code[0:6],e)
-        return code
-
-def get_shareholder_data():
-    # monkey.patch_all()
-    stocklist = get_stocklist_prefix("01","02",0)
-    # gpool=Pool(5000)
-    errorlist=[]
     for code in stocklist:
+
+        if ser == "both" or ser == "local":
+            conn = localconn()
+            cur = conn.cursor()
+        if ser == "both" or ser == "server":
+            conns = serverconn()
+            curs = conns.cursor()
+
+        url = "http://emweb.securities.eastmoney.com/PC_HSF10/ShareholderResearch/ShareholderResearchAjax?code=%s"%(code)
+        html = myspyder(url,proxy=0)
+
         try:
-            get_single_shareholder_data(code,ser='both',proxy=0)
+            doc = json.loads(html.content)
+            ##  get shareholder data
+            if len(doc['sdgd'])>0:
+                for i in range(len(doc['sdgd'])):
+                    table = pd.DataFrame(doc['sdgd'][i]['sdgd'])
+                    del table['bdbl']
+                    table =table.rename(columns={'cgs':'quantity', 'gdmc':'name','gflx':'type','mc':'rank','rq':'date','zj':'change','zltgbcgbl':'percentage'})
+                    table['code'] = code[2:]
+                    table=table[['code','date','rank','name','quantity','percentage','change','type']]
+                    for i in range(len(table)):
+                        if table['change'][i]=='不变':
+                            table['change'][i]=0
+                        if table['change'][i]=='新进':
+                            table['change'][i]=table['quantity'][i]
+
+                        params=[str(param) for param in table.values[i]]
+                        sql_query ="INSERT IGNORE INTO `shareholder`(`code`, `date`, `rank`, `name`, `quantity`, `percentage`, `change`, `type`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"
+                        if ser == "both" or ser == "local":
+                            cur.execute(sql_query,params)
+                        if ser == "both" or ser == "server":
+                            curs.execute(sql_query, params)
+
+            ##  get cirholder data
+            if len(doc['sdltgd'])>0:
+                for j in range(len(doc['sdltgd'])):
+                    table2 = pd.DataFrame(doc['sdltgd'][j]['sdltgd'])
+                    del table2['bdbl']
+                    table2 =table2.rename(columns={'cgs':'quantity', 'gdmc':'name','gdxz':'type','gflx':'abh','mc':'rank','rq':'date','zj':'change','zltgbcgbl':'percentage'})
+                    table2['code'] = code[2:]
+                    table2=table2[['code','date','rank','name','type','quantity','percentage','change','abh']]
+                    for i in range(len(table2)):
+                        if table2['change'][i] == '不变':
+                            table2['change'][i] = 0
+                        if table2['change'][i] == '新进':
+                            table2['change'][i] = table2['quantity'][i]
+
+                        params=[str(param) for param in table2.values[i]]
+                        sql_query="INSERT ignore INTO `cirholder`(`code`, `date`, `rank`, `name`, `type`, `quantity`, `percentage`, `change`, `abh`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                        if ser =="both" or ser == "local":
+                            cur.execute(sql_query,params)
+                        if ser =="both" or ser == "server":
+                            curs.execute(sql_query, params)
+
+            ##股东人数
+            if len(doc['gdrs'])>0:
+                table3 = pd.DataFrame(doc['gdrs'])
+                table3 = table3.rename(columns={'cmjzd': 'scr', 'gdrs': 'shareholders', 'gdrs_jsqbh': 'shschange', 'qsdgdcghj':'top10', 'qsdltgdcghj':'cirtop10', 'gj':'close', 'rjcgje':'avgamount', 'rjltg':'avgcirquantity', 'rjltg_jsqbh':'avgcirchange', 'rq':'date'})
+                table3['code'] = code[2:]
+                table3 = table3[['code','date','close','scr','top10','cirtop10','shareholders','shschange','avgamount','avgcirquantity','avgcirchange']]
+                for i in range(len(table3)):
+                    if '万'in table3['shareholders'][i]:
+                        table3['shareholders'][i]=float(table3['shareholders'][i].replace('万',''))*10000
+                    if '万'in table3['avgamount'][i]:
+                        table3['avgamount'][i]=float(table3['avgamount'][i].replace('万',''))*10000
+                    if '万'in table3['avgcirquantity'][i]:
+                        table3['avgcirquantity'][i]=float(table3['avgcirquantity'][i].replace('万',''))*10000
+                    params=[str(param) if param!='--' else None for param in table3.values[i]]
+                    sql_query="INSERT IGNORE INTO `shareholdernumber`(`code`, `date`, `close`, `scr`, `top10`, `cirtop10`, `shareholders`, `shschange`, `avgamount`, `avgcirquantity`, `avgcirchange`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+                    if ser =="both" or ser == "local":
+                        cur.execute(sql_query,params)
+                    if ser =="both" or ser == "server":
+                        curs.execute(sql_query, params)
+
+            if ser == "both" or ser == "local":
+                conn.commit()
+            if ser == "both" or ser == "server":
+                conns.commit()
+
         except Exception as e:
-            print(e)
             errorlist.append(code)
-        # tasks.append(gpool.spawn(get_single_shareholder_data(code,proxy=0)))
-    # gevent.joinall(tasks)
-    return errorlist #[task.value for task in tasks].remove(None)
+            print("%s:%s"%(code,e))
+
+        if ser == "both" or ser == "local":
+            conn.close()
+        if ser == "both" or ser == "server":
+            conns.close()
+
+    return errorlist
+
 
 if __name__ == '__main__':
-    # from ip import checkip
-    # checkip()
     warnings.filterwarnings('ignore')
-    stocklist = get_shareholder_data()
-    times_retry=3
+    stocklist = get_shareholder_data(ser='local',stocklist=get_stocklist_prefix('sh','sz',pre=1))
+    times_retry = 10
     while len(stocklist) != 0 and times_retry != 0:
-        stocklist = get_shareholder_data()
+        stocklist = get_shareholder_data(ser='local', stocklist=stocklist)
         times_retry -= 1
-
+    print(stocklist)

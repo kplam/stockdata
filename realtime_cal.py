@@ -9,7 +9,7 @@ Created on 15:20:00 2018-02-05
 from kpfunc.indicator import *
 from update_dayline import *
 from cal_financial import *
-import time, math
+import time, math, gc
 import pandas as pd
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -50,7 +50,6 @@ class realtime_cal:
         return self.list_spo
 
     def getbase(self):
-        print("正在计算基本面股票池...")
         alllist = [self.fr(), self.fmedian(), self.forecast(), self.spo()]
         for i, stocks in enumerate(alllist):
             if i == 0:
@@ -87,7 +86,6 @@ class realtime_cal:
     def calc(self):
         lenstocklist=len(self.stocklist)
         df = self.dfrealtime[(self.dfrealtime['amorank']<=(lenstocklist//6)) & (self.dfrealtime['araise']<self.dfrealtime['araisecompare'])]
-        print(df)
         df = df.reset_index(drop=True)
         self.jma_result = []
         self.macd_result = []
@@ -166,30 +164,31 @@ class realtime_cal:
 def run_realtime_cal():
     BS = BlockingScheduler()
     tt0 = datetime.datetime.today()
-    print("=" * 60)
-    print("正在初始化...")
+    # print("=" * 60)
+    # print("正在初始化...")
     rc = realtime_cal()
     rc.getbase()
     rc.last_amorank()
     base = rc.baselist
     tt1 = datetime.datetime.today()
-    print("初始化完成,耗时%s" % (str(tt1 - tt0)))
-    print("=" * 60)
-    print("交易时间内每隔5分钟计算一次...\n临近收盘计算结果更为可靠.")
-    print("=" * 60)
+    # print("初始化完成,耗时%s" % (str(tt1 - tt0)))
+    # print("=" * 60)
+    # print("交易时间内每隔5分钟计算一次...\n临近收盘计算结果更为可靠.")
+    # print("=" * 60)
 
     @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri', hour='9', minute='10', id='reinit')
     def reinit():
         tt0 = datetime.datetime.today()
-        print("=" * 60)
-        print("重新初始化...")
+        # print("=" * 60)
+        # print("重新初始化...")
         rc.getbase()
         rc.last_amorank()
         tt1 = datetime.datetime.today()
-        print("初始化完成,耗时%s"%(str(tt1-tt0)))
-        print("=" * 60)
-        print("交易时间内每隔5分钟计算一次...\n临近收盘计算结果更为可靠.")
-        print("=" * 60)
+        # print("初始化完成,耗时%s"%(str(tt1-tt0)))
+        # print("=" * 60)
+        # print("交易时间内每隔5分钟计算一次...\n临近收盘计算结果更为可靠.")
+        # print("=" * 60)
+        gc.collect()
 
     @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri', hour='9,10,11,13,14,15', minute='*/5',id='run_cal')
     def run_cal():
@@ -203,8 +202,8 @@ def run_realtime_cal():
             if 92959< int(time.strftime("%H%M%S"))<150459:
                 if int(time.strftime("%H%M%S"))<113459 or int(time.strftime("%H%M%S"))>130000:
                     tt00 =datetime.datetime.today()
-                    print("当前时间为：%s"%(tt00))
-                    print("正在进行计算...")
+                    # print("当前时间为：%s"%(tt00))
+                    # print("正在进行计算...")
 
                     rc.amorank()
                     rc.cal_araise()
@@ -213,16 +212,17 @@ def run_realtime_cal():
                     finalresult = list(set(taresult).intersection(rc.baselist))
                     tt44 = datetime.datetime.today()
 
-                    print("计算完毕,耗时%s"%(str(tt44-tt00)))
-                    print("=" * 60)
-                    print("技术分析结果:\n", str(taresult)[1:-1])
-                    print("=" * 60)
-                    print("综合结果：\n", str(finalresult)[1:-1])
-                    print("=" * 60)
+                    # print("计算完毕,耗时%s"%(str(tt44-tt00)))
+                    # print("=" * 60)
+                    # print("技术分析结果:\n", str(taresult)[1:-1])
+                    # print("=" * 60)
+                    # print("综合结果：\n", str(finalresult)[1:-1])
+                    # print("=" * 60)
                     result = [[tt00,str(taresult)[1:-1].replace("'",""),str(finalresult)[1:-1].replace("'","")]]
                     df = pd.DataFrame(result,columns=['datetime','taresult','finalresult'])
                     df.to_sql('realtimecal',localconn(),flavor='mysql',schema='stockdata',if_exists='append',index=False)
                     df.to_sql('realtimecal',serverconn(),flavor='mysql',schema='stockdata',if_exists='append',index=False)
+        gc.collect()
     BS.start()
 
 if __name__ == '__main__':

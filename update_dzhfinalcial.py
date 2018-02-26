@@ -29,4 +29,4 @@ def update_financial(filename,conn=localconn()):
 
 
 if __name__ == '__main__' :
-    error = update_financial('20180101',conn=serverconn())
+    error = update_financial('20180212',conn=localconn())

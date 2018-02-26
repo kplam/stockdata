@@ -65,11 +65,17 @@ def lhb(ser='both'):
             errorlist.append((str(date),code,e))
         df_lhbdetail.to_csv('./data/lhb/'+str(date)+'.csv',encoding='utf-8')
         if ser == 'local' or ser == 'both':
-            df_lhbdetail.to_sql('lhb',localconn(),flavor='mysql',schema='stockdata',if_exists='append',
-                                index=True,chunksize=10000)
+            try:
+                df_lhbdetail.to_sql('lhb',localconn(),flavor='mysql',schema='stockdata',if_exists='append',
+                                    index=True,chunksize=10000)
+            except Exception as e:
+                print(e)
         if ser == 'server' or ser == 'both':
-            df_lhbdetail.to_sql('lhb',serverconn(),flavor='mysql',schema='stockdata',if_exists='append',
-                                index=True,chunksize=10000)
+            try:
+                df_lhbdetail.to_sql('lhb',serverconn(),flavor='mysql',schema='stockdata',if_exists='append',
+                                    index=True,chunksize=10000)
+            except Exception as e:
+                print(e)
     df_error = pd.DataFrame(errorlist)
     df_error.to_csv(path()+'/data/lhb/error.csv')
     print("LHB:更新完毕！")

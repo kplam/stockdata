@@ -5,7 +5,7 @@ from kpfunc.spyder import *
 from numpy import nan
 import tushare,numpy
 from bs4 import BeautifulSoup as bs
-conn=localconn()
+conn=conn()
 df = pd.read_csv('./data/dzhdata/delisted.csv',encoding='gbk',dtype='object')
 
 df['交易状态']='-1'

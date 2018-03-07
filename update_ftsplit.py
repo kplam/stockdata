@@ -45,7 +45,7 @@ def split_szfh(iLong,proxy=0):
         except:
             pass
     result = pd.DataFrame(result,columns=['code','date','红股','红利']).sort_values('date',ascending=False).reset_index(drop=True)
-    result['date']=result['date'].astype('datetime64')
+    result['date']=result['date'].astype('datetime64[ns]')
 
     return result
     # try:
@@ -99,12 +99,9 @@ def split_pg(proxy):  # 配股
             pass
     return List_Fin_pg
 
-def ftsplit(ser='both'):
+def ftsplit():
     # ============ global define ============== #
-    if ser == 'local' or ser == 'both':
-        conn = localconn()
-    if ser == 'server' or ser == 'both':
-        conns = serverconn()
+    engine=conn()
     List_stock = get_stocklist()
     iLong = int((round(len(List_stock)/1000,0)+1)*1000)
 
@@ -131,22 +128,16 @@ def ftsplit(ser='both'):
     if df_ftsplit.empty != True:
         df_ftsplit = df_ftsplit[df_ftsplit['date'] >= today]
         if df_ftsplit.empty ==False:
-            df_ftsplit = df_ftsplit.reset_index(range(len(df_ftsplit)), drop=True)
+            df_ftsplit = df_ftsplit.reset_index(drop=True)
             for i in range(len(df_ftsplit)):
-                code = str(df_ftsplit.get_value(i,'code'))
-                sz = float(df_ftsplit.get_value(i,'红股'))
-                xj = float(df_ftsplit.get_value(i,'红利'))
-                sdate = str(df_ftsplit.get_value(i,'date'))
+                code = str(df_ftsplit['code'][i])
+                sz = float(df_ftsplit['红股'][i])
+                xj = float(df_ftsplit['红利'][i])
+                sdate = str(df_ftsplit['date'][i])
                 sql_param=(code,sz,xj,sdate)
                 sql_update = "INSERT IGNORE INTO `ftsplit`(`code`, `红股`, `红利`,`date`) VALUES (%s,%s,%s,%s)"
-                if ser == 'local' or ser == 'both':
-                    cur = conn.cursor()
-                    cur.execute(sql_update,sql_param)
-                    conn.commit()
-                if ser == 'server' or ser == 'both':
-                    curs = conns.cursor()
-                    curs.execute(sql_update,sql_param)
-                    conns.commit()
+
+                engine.execute(sql_update,sql_param)
 
             print("FTSPLIT:数据写入完毕！")
         else:
@@ -161,30 +152,25 @@ def ftsplit(ser='both'):
     while df_pg.empty ==True and times_retry!=0:
         df_pg = split_pg(proxy=0)
         times_retry = times_retry-1
-    df_pg['除权日']=df_pg['除权日'].astype('datetime64')
+    df_pg['除权日']=df_pg['除权日'].astype('datetime64[ns]')
     df_pg = df_pg[df_pg['除权日']==today]
     if df_pg.empty !=True:
         df_pg = df_pg.reset_index(range(len(df_pg)), drop=True)
         for m in range(len(df_pg)):
-            Date_pg = str(df_pg.get_value(m,'除权日'))
-            Code_pg = df_pg.get_value(m,'股票代码')
-            bl_pg = df_pg.get_value(m,'配股比例（10配）')
-            pgj_pg = df_pg.get_value(m,'配股价')
+            Date_pg = str(df_pg['除权日'][m])
+            Code_pg = df_pg['股票代码'][m]
+            bl_pg = df_pg['配股比例（10配）'][m]
+            pgj_pg = df_pg['配股价'][m]
             sql_ftsplitupdate="INSERT IGNORE INTO `ftsplit`(`code`, `date`, `配股`, `配股价`) VALUES (%s,%s,%s,%s)"
             param=(Code_pg,Date_pg,bl_pg,pgj_pg)
-            if ser == 'local' or ser == 'both':
-                cur=conn.cursor()
-                cur.execute(sql_ftsplitupdate,param)
-                conn.commit()
-            if ser == 'server' or ser == 'both':
-                curs=conns.cursor()
-                curs.execute(sql_ftsplitupdate,param)
-                conns.commit()
+
+            engine.execute(sql_ftsplitupdate,param)
+
         print("FTSPLIT:配股信息更新完毕!")
     else:
         print("FTSPLIT:没有需更新的配股信息!")
     return 1
 
 if __name__ == '__main__' :
-    ftsplit(ser='both')
+    ftsplit()
     # split_szfh()

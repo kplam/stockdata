@@ -6,11 +6,11 @@ Created on 15:20:00 2017-12-01
 """
 import datetime,re
 import pandas as pd
-from kpfunc.getdata import localconn,serverconn,get_stocklist
+from kpfunc.getdata import *
 from kpfunc.spyder import myspyder
 from kpfunc.function import path
 
-def get_forecast(ser='both',proxy=0,lastday=0,update=1):
+def get_forecast(proxy=0,lastday=0,update=1):
     """
     :param ser: 选择更新的数据库，local/server/both
     :param proxy: 设置是否使用ip代理，0为不开启，1为开启
@@ -65,10 +65,9 @@ def get_forecast(ser='both',proxy=0,lastday=0,update=1):
     else:
         df_forecast = df_forecast
 
-    if ser == 'local' or ser == 'both':
-        conn = localconn()
-    if ser == 'server' or ser == 'both':
-        conns = serverconn()
+
+    engine = conn()
+
 
     for j in range(len(df_forecast)):
         try:
@@ -94,14 +93,8 @@ def get_forecast(ser='both',proxy=0,lastday=0,update=1):
                          "期净利润`, `财报日期`,`上限`,`下限`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
             param = (Scode, Sdate, Schange, Spercent, Stype, Sprofit, Srepdate, upper, lower)
 
-            if ser == 'local' or ser == 'both':
-                cur = conn.cursor()
-                cur.execute(sql_update,param)
-                conn.commit()
-            if ser == 'server' or ser == 'both':
-                curs = conns.cursor()
-                curs.execute(sql_update,param)
-                conns.commit()
+            engine.execute(sql_update,param)
+
         except Exception as e:
             errorList.append(e)
     dfErrorList = pd.DataFrame({'error': errorList})
@@ -110,4 +103,4 @@ def get_forecast(ser='both',proxy=0,lastday=0,update=1):
     return dfErrorList
 
 if __name__=="__main__":
-    get_forecast(ser='both')
+    get_forecast()

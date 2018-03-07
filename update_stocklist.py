@@ -4,15 +4,15 @@
 Created on 15:20:00 2017-12-01
 @author: kplam
 """
-from kpfunc.getdata import localconn,serverconn,get_stocklist
+from kpfunc.getdata import *
 from kpfunc.spyder import myspyder
 from kpfunc.function import getpinyin,path
 import pandas as pd
 import re,datetime
 
-def update_stocklist(ser='both',proxy=0):
+def update_stocklist(proxy=0):
     """
-    :param ser: local/server/both
+
     :param proxy: 0 close / 1 open
     :return: errorlist
     """
@@ -36,38 +36,29 @@ def update_stocklist(ser='both',proxy=0):
         xg = xg.dropna().reset_index(drop=True)
         print("STOCKLIST:数据获取成功，正在写入数据库...")
 
-        if ser == 'local' or ser == 'both':
-            conn = localconn()
-        if ser == 'server' or ser == 'both':
-            conns = serverconn()
+        engine=conn()
 
         stocklist = get_stocklist()
         Errorlist =[]
         sql_ipocheck = "select `证券代码` from `basedata` WHERE `首发价格` is NULL"
-        ipocheck = pd.read_sql(sql_ipocheck,localconn())['证券代码'].values
+        ipocheck = pd.read_sql(sql_ipocheck,engine)['证券代码'].values
 
 
         for i in range(len(xg)):
-            code, name = xg.get_value(i, 'code'), xg.get_value(i, 'name')
-            ipoprice , ipodate = xg.get_value(i, 'ipoprice'), xg.get_value(i, 'ipodate')
+            code, name = xg['code'][i], xg['name'][i]
+            ipoprice , ipodate = xg['ipoprice'][i], xg['ipodate'][i]
             pinyin = getpinyin(name) if '银行' not in name else getpinyin(name).replace('YX','YH')
             market = '上海证券交易所' if code[0] == '6' else '深圳证券交易所'
             if code not in stocklist or code in ipocheck:
                 try:
                     sql_xg = "INSERT ignore INTO `stocklist`(`证券代码`, `证券简称`, `上市市场`,`拼音缩写`) VALUES (%s,%s,%s,%s)"
                     sql_ipo = "update `basedata` set `首发日期`=%s ,`首发价格`=%s WHERE `证券代码`=%s"
-                    if ser == 'local' or ser == 'both':
-                        cur = conn.cursor()
-                        cur.execute(sql_xg, (code, name, market, pinyin))
-                        conn.commit()
-                        cur.execute(sql_ipo, (str(ipodate), ipoprice, code))
-                        conn.commit()
-                    if ser == 'server' or ser == 'both':
-                        curs = conns.cursor()
-                        curs.execute(sql_xg, (code, name, market, pinyin))
-                        conns.commit()
-                        curs.execute(sql_ipo, (str(ipodate), ipoprice, code))
-                        conns.commit()
+
+                    engine.execute(sql_xg, (code, name, market, pinyin))
+                    # conn.commit()
+                    engine.execute(sql_ipo, (str(ipodate), ipoprice, code))
+                    # conn.commit()
+
                     print("STOCKLIST:",code, "：更新成功！")
                 except Exception as e:
                     print("STOCKLIST:",code, "：更新失败！", e)
@@ -80,6 +71,6 @@ def update_stocklist(ser='both',proxy=0):
         return ['数据获取失败...']
 
 if __name__ == "__main__" :
-    error = update_stocklist(ser='both',proxy=0)
+    error = update_stocklist(proxy=0)
     df_error = pd.DataFrame(error)
     df_error.to_csv(path()+'/error/update_stocklist.csv')

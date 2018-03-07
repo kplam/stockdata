@@ -8,28 +8,28 @@ Created on Fri Nov 10 15:20:00 2017
 import requests as rq
 # from bs4 import BeautifulSoup as bs
 import pandas as pd
-from kpfunc.getdata import localconn,serverconn
+from kpfunc.getdata import *
 from kpfunc.spyder import myspyder
 from kpfunc.function import path
 import time,datetime,re,random,json
+import pymysql
 """
 http://app.stcn.com/?app=article&controller=article&action=fulltext&contentid=
 """
-def news_content(ser='both'):
+def news_content():
 
     # ===================
-    if ser == 'local' or ser == 'both':
-        conn = localconn()
-    if ser == 'server' or ser == 'both':
-        conns = serverconn()
-    today=datetime.date.today()
+    engine = conn()
+    today=datetime.date.today()-datetime.timedelta(days=5)
     # ===================set requests================== #
     # rqs = rq.session()
     # rqs.keep_alive = False
     # ===================get news content================ #
 
-    sql_news_null = "SELECT * FROM `news` WHERE `content` IS NULL OR (`title` LIKE '%%更新中%%' and `datetime`>='%s')"%(today)
-    df_listurl = pd.read_sql(sql_news_null,conn)
+
+    sql_news_null = text("SELECT * FROM `news` WHERE `content` IS NULL OR (`title` LIKE :ud and `datetime`>=:dt)")
+    df_listurl = pd.read_sql(sql_news_null, engine,params={"ud":"%更新中%","dt":str(today)})
+
     list_url = df_listurl['link'].values
     list_title = df_listurl['title'].values
 
@@ -58,18 +58,13 @@ def news_content(ser='both'):
             if newscontent == list_content[i]:
                 pass
             else:
-                # print("NEW:",list_title[i])
+                print("NEW:",list_title[i])
                 # print(newscontent)
                 sql_update_newscontent = "update `news` set `content`=%s WHERE `link`=%s"
                 param = (newscontent,list_url[i])
-                if ser == 'local' or ser == 'both':
-                    cur = conn.cursor()
-                    cur.execute(sql_update_newscontent, param)
-                    conn.commit()
-                if ser == 'server' or ser == 'both':
-                    curs = conns.cursor()
-                    curs.execute(sql_update_newscontent, param)
-                    conns.commit()
+
+                engine.execute(sql_update_newscontent, param)
+
         except Exception as e:
             # print(url,e)
             errorlist.append((list_url[i], e))
@@ -77,4 +72,4 @@ def news_content(ser='both'):
     df_errorlist.to_csv(path()+'/error/update_newscontent.csv')
 
 if __name__ == '__main__':
-    news_content(ser='local')
+    news_content()

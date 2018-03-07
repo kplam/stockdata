@@ -4,12 +4,12 @@
 Created on 15:20:00 2017-12-01
 @author: kplam
 """
-from kpfunc.getdata import localconn,serverconn
+from kpfunc.getdata import *
 import pandas as pd
 import datetime
 
 class cal_financial:
-    def __init__(self,conn = localconn()):
+    def __init__(self,conn = conn()):
         """
         :param conn: set sql conn (localconn()/serverconn())
         """
@@ -39,7 +39,7 @@ class cal_financial:
                      ]
             df_result = pd.concat([df_result,df_tmp])
         df_result = df_result[['代码','报表日期']]
-        df_result.to_sql('faresult', con=self.conn, flavor='mysql', if_exists='replace',index=False, dtype=None)
+        df_result.to_sql('faresult', con=self.conn,  if_exists='replace',index=False, dtype=None)
         return print("Done!")
 
     def median(self,fWeight=0.8,iQuarter=12,fCompare=0.4):
@@ -50,10 +50,10 @@ class cal_financial:
         :return: code list
         """
         list_reportdate = self.list_reportdate
-        sReportdate = str(list_reportdate.get_value(iQuarter, '报表日期'))
+        sReportdate = str(list_reportdate['报表日期'][iQuarter])
         weight = []
         for i in range(len(list_reportdate)):
-            reportdate = list_reportdate.get_value(i, '报表日期')
+            reportdate = list_reportdate['报表日期'][i]
             weight.append((reportdate, 1 * fWeight ** i))
         weight = pd.DataFrame(weight, columns=['报表日期', 'weight'])
         weight = weight[:iQuarter]
@@ -124,5 +124,5 @@ class cal_financial:
 if __name__ == "__main__" :
     # cal_financial(conn=localconn()).updatesql()
     # cal_financial(conn=serverconn()).updatesql()
-    cal_financial(conn=localconn()).updatesql()
+    cal_financial(conn=conn()).updatesql()
     # print(cal_financial(conn=localconn()).median())

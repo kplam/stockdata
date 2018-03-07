@@ -6,13 +6,13 @@ Created on 15:20:00 2017-12-06
 @author: kplam
 """
 from kpfunc.spyder import myspyder
-from kpfunc.getdata import localconn,serverconn
+from kpfunc.getdata import *
 from kpfunc.function import path
 from numpy import nan
 import datetime,re
 import pandas as pd
 
-def spo(ser='both',proxy=0):
+def spo(proxy=0):
     """
     http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=5000&st=5
 
@@ -39,10 +39,14 @@ def spo(ser='both',proxy=0):
     # df_spo = df_spo.replace('-','')
     # print(df_spo)
 
-    df_spo['发行日期']=df_spo['发行日期'].astype('datetime64')
+    df_spo['发行日期']=df_spo['发行日期'].astype('datetime64[ns]')
     spo = df_spo[df_spo['发行日期']>=today]
     spo.to_csv(path() + '/data/spo_done/spo_' + str(today) + '.csv',encoding='utf-8')
+
+    engine = conn()
     try:
+
+
         for elem in spo.values:
             sql_update_spo = "INSERT IGNORE INTO `spo_done`(`code`, `name`, `发行方式`, `发行总数`, `发行价格`, " \
                              "`发行日期`, `增发上市日期`, `增发代码`, `网上发行`, `中签号公布日`, `中签率`) VALUES" \
@@ -54,20 +58,26 @@ def spo(ser='both',proxy=0):
                 else:
                     params.append(None)
 
-            if ser == 'local' or ser == 'both':
-                conn = localconn()
-                cur = conn.cursor()
-                cur.execute(sql_update_spo,params)
-                conn.commit()
+            # if ser == 'local' or ser == 'both':
+                # conn = localconn()
+                # cur = conn.cursor()
+            result=engine.execute(sql_update_spo,params)
+                # result.close()
+                # conn.commit()
                 # spo.to_sql('spo_done',localconn(),flavor='mysql',schema='stockdata',if_exists='append',
                 #            index=False,chunksize=10000)
-            if ser == 'server' or ser == 'both':
-                conns = serverconn()
-                curs = conns.cursor()
-                curs.execute(sql_update_spo, params)
-                conns.commit()
+            # if ser == 'server' or ser == 'both':
+                # conns = serverconn()
+                # curs = conns.cursor()
+                # results=conns.execute(sql_update_spo, params)
+                # results.close()
+                # conns.commit()
                 # spo.to_sql('spo_done',serverconn(),flavor='mysql',schema='stockdata',if_exists='append',
                 #            index=False,chunksize=10000)
+        # if ser == 'local' or ser == 'both':
+        #     conn.close()
+        # if ser == 'server' or ser == 'both':
+        #     conns.close()
         print("SPO: Done!")
     except Exception as e:
         print("SPO:",e)
@@ -78,6 +88,6 @@ def spo(ser='both',proxy=0):
 "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SR&sty=ZF&p=1&ps=50&st=5"
 """
 if __name__ == '__main__':
-    errorlist = spo(ser='both',proxy=0)
+    errorlist = spo(proxy=0)
     df = pd.DataFrame(errorlist)
     df.to_csv(path()+'/error/update_spo.csv')

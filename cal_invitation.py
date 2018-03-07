@@ -3,7 +3,7 @@ from kpfunc.getdata import *
 import hashlib,datetime,time,random
 
 
-def make_checkcode(N):
+def make_checkcode(conn=conn(),N=100):
     list=[]
     for i in range(N):
         now = str(datetime.datetime.today())
@@ -13,8 +13,8 @@ def make_checkcode(N):
         list.append([code,user_check])
     df = pd.DataFrame(list,columns=['code','user_check'])
     print(df)
-    df.to_sql('user_invitation',serverconn(),flavor='mysql',schema='stockdata',if_exists='append',index=False)
+    df.to_sql('user_invitation',conn,schema='stockdata',if_exists='append',index=False)
 
 
 if __name__ == '__main__':
-    make_checkcode(2)
+    make_checkcode(conn=conn(),N=2)

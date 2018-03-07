@@ -23,29 +23,29 @@ def cal_code(N=0):
 
 
 
-    conn = localconn()
+    engine = conn()
     alllist =[]
     result =[]
     if N==0 and int():
         sql_date = "select distinct `date` from `indexdb` ORDER BY `date` DESC limit 1"
-        lastdate = pd.read_sql(sql_date,conn)['date'].values[0]
+        lastdate = pd.read_sql(sql_date,engine)['date'].values[0]
     stocklist = get_df_stocklist()
 
     ## financial rank
     def fr(findate):
         sql_fr = "select * from `financial_rank` WHERE `总评分`>63 and `报表日期`='%s'" % (findate)
-        list_fr = pd.read_sql(sql_fr, conn)['代码'].values
+        list_fr = pd.read_sql(sql_fr, engine)['代码'].values
         return list_fr
 
     ## financial median model
     def fmedian():
-        return cal_financial(localconn()).median()
+        return cal_financial(conn=engine).median()
 
     ## usefuldata
     def useful(tamodel='all'):
         sql_useful = "select * from `usefuldata` WHERE `date`='%s' and `taresult`!='0' and `amorank`<=800 and `araise`<=-120" % (
         lastdate)
-        df_useful = pd.read_sql(sql_useful, conn)
+        df_useful = pd.read_sql(sql_useful, engine)
         list_useful_model1 = df_useful[(df_useful['taresult'] == '1') | (df_useful['taresult'] == '1,2')]['code'].values
         list_useful_model2 = df_useful[(df_useful['taresult'] == '2') | (df_useful['taresult'] == '1,2')]['code'].values
         list_useful = df_useful['code'].values
@@ -59,33 +59,33 @@ def cal_code(N=0):
     ## forecast
     def forecast(forecastdate):
         sql_forecast = "select * from `forecast` WHERE `同期净利润`>10000000 and `上限`>30 and `财报日期`='%s'" %(forecastdate)
-        list_forecast = pd.read_sql(sql_forecast,conn)['code'].values
+        list_forecast = pd.read_sql(sql_forecast,engine)['code'].values
         return list_forecast
 
     def blocktrade(blockdays):
         sql_blocktrade = "select `code` from `blocktrade` where `成交价`>`收盘价` and `交易日期`>='%s' and `交易日期`<='%s' " % (
         lastdate - datetime.timedelta(days=blockdays), lastdate)
-        list_blocktrade = pd.read_sql(sql_blocktrade, conn)['code'].values
+        list_blocktrade = pd.read_sql(sql_blocktrade, engine)['code'].values
         return list(set(list_blocktrade))
 
     def lhb(lhbdays):
         sql_lhbase = "select * from `lhb_base` WHERE `级别`<3"
-        xwcode = pd.read_sql(sql_lhbase,conn)['营业部代码'].values
+        xwcode = pd.read_sql(sql_lhbase,engine)['营业部代码'].values
         xw = ','.join(xwcode)+ ',200513872'
         sql_lhb = "select * from `lhb` WHERE `date`>='%s' and  `date`<='%s' and `买卖方向`='1' and `营业部代码` in (%s)  and `买入金额`>1000 ORDER BY `买入金额` DESC "%(lastdate-datetime.timedelta(days=lhbdays),lastdate,xw)
-        df_lhb = pd.read_sql(sql_lhb,conn)
+        df_lhb = pd.read_sql(sql_lhb,engine)
         list_lhb = list(set(df_lhb['code'].values))
         return list_lhb
 
     def spo(spodays):
         sql_spo = "select `code` from `spo_done` WHERE `发行日期`>'%s' and `发行日期`<='%s'" %(lastdate-datetime.timedelta(days=spodays),lastdate)
-        list_spo = pd.read_sql(sql_spo,conn)['code'].values
+        list_spo = pd.read_sql(sql_spo,engine)['code'].values
         return list(set(list_spo))
 
     def mo(modays):
         sql_mo = "select * from `managerial` WHERE `日期`>'%s' and `日期`<='%s'" % (
         lastdate - datetime.timedelta(days=modays), lastdate)
-        df_mo = pd.read_sql(sql_mo, conn)
+        df_mo = pd.read_sql(sql_mo, engine)
         codes = list(set(df_mo['code'].values))
         list_mo = []
         for code in codes:
@@ -95,7 +95,7 @@ def cal_code(N=0):
 
     def zzd(zzddays):
         sql = "select * from `news` WHERE `type`='【早知道】' and `datetime`>='%s'" % (lastdate-datetime.timedelta(days=zzddays))
-        df = pd.read_sql(sql, localconn())['content']
+        df = pd.read_sql(sql, engine)['content']
         s = ''
         for i in range(len(df)):
             s = s + bs(df[i], 'html5lib').text
@@ -113,7 +113,7 @@ def cal_code(N=0):
     def unusual(day=0,ipo=180):
         sql = "select * from `unusual` WHERE `datetime` >='%s' and `goodorbad` = 1" % (
                 datetime.date.today() - datetime.timedelta(days=day))
-        df = pd.read_sql(sql, localconn())
+        df = pd.read_sql(sql, engine)
         df2 = df['code'].value_counts()
         df2 = pd.DataFrame(df2).reset_index().rename(columns={'index': 'code', 'code': 'times'})
         ref = int(df2['times'].median() + df2['times'].std())
@@ -124,7 +124,7 @@ def cal_code(N=0):
             times = df2['times'][i]
             if code[0] in ['6', '0', '3'] and times > ref:
                 sqlcheck = "select `证券简称`,`首发日期` from `basedata` WHERE `证券代码`='%s'" % (code)
-                df_check = pd.read_sql(sqlcheck, localconn())
+                df_check = pd.read_sql(sqlcheck, engine)
                 if df_check.empty == False:
                     if df_check['首发日期'][0] < (datetime.date.today() - datetime.timedelta(days=ipo)):
                         result.append([code, df_check['证券简称'][0], times])
@@ -248,4 +248,4 @@ def cal_code(N=0):
         print("共选出%i只个股" % len(result))
 
 if __name__ == '__main__':
-    cal_code(N=0)
+    cal_code(N=1)

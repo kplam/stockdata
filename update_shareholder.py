@@ -5,7 +5,7 @@ Created on 15:20:00 2017-11-22
 
 @author: kplam
 """
-from kpfunc.getdata import get_stocklist_prefix,localconn,serverconn
+from kpfunc.getdata import *
 from kpfunc.spyder import myspyder
 import warnings,json
 import pandas as pd
@@ -15,17 +15,11 @@ import pandas as pd
 http://emweb.securities.eastmoney.com/PC_HSF10/ShareholderResearch/ShareholderResearchAjax?code=sh600313
 """
 
-def get_shareholder_data(ser='both',stocklist =get_stocklist_prefix('sh','sz',1)):
+def get_shareholder_data(stocklist =get_stocklist_prefix('sh','sz',1)):
     errorlist = []
-
+    engine=  conn()
     for code in stocklist:
 
-        if ser == "both" or ser == "local":
-            conn = localconn()
-            cur = conn.cursor()
-        if ser == "both" or ser == "server":
-            conns = serverconn()
-            curs = conns.cursor()
 
         url = "http://emweb.securities.eastmoney.com/PC_HSF10/ShareholderResearch/ShareholderResearchAjax?code=%s"%(code)
         html = myspyder(url,proxy=0)
@@ -48,10 +42,7 @@ def get_shareholder_data(ser='both',stocklist =get_stocklist_prefix('sh','sz',1)
 
                         params=[str(param) for param in table.values[i]]
                         sql_query ="INSERT IGNORE INTO `shareholder`(`code`, `date`, `rank`, `name`, `quantity`, `percentage`, `change`, `type`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"
-                        if ser == "both" or ser == "local":
-                            cur.execute(sql_query,params)
-                        if ser == "both" or ser == "server":
-                            curs.execute(sql_query, params)
+                        engine.execute(sql_query,params)
 
             ##  get cirholder data
             if len(doc['sdltgd'])>0:
@@ -69,10 +60,7 @@ def get_shareholder_data(ser='both',stocklist =get_stocklist_prefix('sh','sz',1)
 
                         params=[str(param) for param in table2.values[i]]
                         sql_query="INSERT ignore INTO `cirholder`(`code`, `date`, `rank`, `name`, `type`, `quantity`, `percentage`, `change`, `abh`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                        if ser =="both" or ser == "local":
-                            cur.execute(sql_query,params)
-                        if ser =="both" or ser == "server":
-                            curs.execute(sql_query, params)
+                        engine.execute(sql_query,params)
 
             ##股东人数
             if len(doc['gdrs'])>0:
@@ -89,33 +77,26 @@ def get_shareholder_data(ser='both',stocklist =get_stocklist_prefix('sh','sz',1)
                         table3['avgcirquantity'][i]=float(table3['avgcirquantity'][i].replace('万',''))*10000
                     params=[str(param) if param!='--' else None for param in table3.values[i]]
                     sql_query="INSERT IGNORE INTO `shareholdernumber`(`code`, `date`, `close`, `scr`, `top10`, `cirtop10`, `shareholders`, `shschange`, `avgamount`, `avgcirquantity`, `avgcirchange`) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-                    if ser =="both" or ser == "local":
-                        cur.execute(sql_query,params)
-                    if ser =="both" or ser == "server":
-                        curs.execute(sql_query, params)
+                    engine.execute(sql_query, params)
 
-            if ser == "both" or ser == "local":
-                conn.commit()
-            if ser == "both" or ser == "server":
-                conns.commit()
 
         except Exception as e:
             errorlist.append(code)
             print("%s:%s"%(code,e))
-
-        if ser == "both" or ser == "local":
-            conn.close()
-        if ser == "both" or ser == "server":
-            conns.close()
+        #
+        # if ser == "both" or ser == "local":
+        #     conn.close()
+        # if ser == "both" or ser == "server":
+        #     conns.close()
 
     return errorlist
 
 
 if __name__ == '__main__':
     warnings.filterwarnings('ignore')
-    stocklist = get_shareholder_data(ser='local',stocklist=get_stocklist_prefix('sh','sz',pre=1))
+    stocklist = get_shareholder_data(stocklist=get_stocklist_prefix('sh','sz',pre=1))
     times_retry = 10
     while len(stocklist) != 0 and times_retry != 0:
-        stocklist = get_shareholder_data(ser='local', stocklist=stocklist)
+        stocklist = get_shareholder_data(stocklist=stocklist)
         times_retry -= 1
     print(stocklist)

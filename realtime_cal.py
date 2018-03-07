@@ -12,6 +12,7 @@ from cal_financial import *
 import time, math, gc
 import pandas as pd
 from apscheduler.schedulers.blocking import BlockingScheduler
+from tenacity import retry,stop_after_attempt,wait_fixed
 
 
 class realtime_cal:
@@ -32,21 +33,21 @@ class realtime_cal:
 
     def fr(self):
         sql_fr = "select * from `financial_rank` WHERE `总评分`>63 and `报表日期`='%s'" % (self.findate)
-        self.list_fr = pd.read_sql(sql_fr, localconn())['代码'].values
+        self.list_fr = pd.read_sql(sql_fr, conn())['代码'].values
         return self.list_fr
 
     def fmedian(self):
-        self.list_fm = cal_financial(localconn()).median()
+        self.list_fm = cal_financial(conn()).median()
         return self.list_fm
 
     def forecast(self):
         sql_forecast = "select * from `forecast` WHERE `同期净利润`>10000000 and `上限`>30 and `财报日期`='%s'" %(self.forecastdate)
-        self.list_forecast = pd.read_sql(sql_forecast,localconn())['code'].values
+        self.list_forecast = pd.read_sql(sql_forecast,conn())['code'].values
         return self.list_forecast
 
     def spo(self):
         sql_spo = "select `code` from `spo_done` WHERE `发行日期`>'%s'" %(self.today-datetime.timedelta(days=365*2))
-        self.list_spo = list(set(pd.read_sql(sql_spo,localconn())['code'].values))
+        self.list_spo = list(set(pd.read_sql(sql_spo,conn())['code'].values))
         return self.list_spo
 
     def getbase(self):
@@ -58,7 +59,7 @@ class realtime_cal:
                 self.baselist = list(set(self.baselist).intersection(stocks))
         return self.baselist
 
-
+    @retry(stop=stop_after_attempt(3),wait=wait_fixed(30))
     def amorank(self):
         self.dfrealtime = update_bar().todf_stock()
         self.dfrealtime = self.dfrealtime.sort_values('amo',ascending=False).reset_index(drop=True)
@@ -68,7 +69,7 @@ class realtime_cal:
         lastamorank_result = []
         for code in self.stocklist:
             sql = "select `amorank` from `usefuldata` where `code`='%s' order by `date` Desc limit 1"%(code)
-            df = pd.read_sql(sql,localconn())['amorank']
+            df = pd.read_sql(sql,conn())['amorank']
             if df.empty == False:
                 lastamorank_result.append([code,df.values[0]])
         self.lastamorank = pd.DataFrame(lastamorank_result,columns=['code','lastamorank'])
@@ -101,7 +102,7 @@ class realtime_cal:
             vol = df['vol'][i]
 
             sql = "select * from `dayline` WHERE `code`='%s' ORDER BY `date` DESC limit 300"%(code)
-            k = pd.read_sql(sql,localconn())
+            k = pd.read_sql(sql,conn())
             maxadjcump = k.get_value(len(k) - 1, 'adjcump')
             k['date'] = k['date'].astype('datetime64[ns]')
 
@@ -164,30 +165,29 @@ class realtime_cal:
 def run_realtime_cal():
     BS = BlockingScheduler()
     tt0 = datetime.datetime.today()
-    # print("=" * 60)
-    # print("正在初始化...")
+    print("=" * 60)
+    print("正在初始化...")
     rc = realtime_cal()
     rc.getbase()
     rc.last_amorank()
-    base = rc.baselist
     tt1 = datetime.datetime.today()
-    # print("初始化完成,耗时%s" % (str(tt1 - tt0)))
-    # print("=" * 60)
-    # print("交易时间内每隔5分钟计算一次...\n临近收盘计算结果更为可靠.")
-    # print("=" * 60)
+    print("初始化完成,耗时%s" % (str(tt1 - tt0)))
+    print("=" * 60)
+    print("交易时间内每隔5分钟计算一次...\n临近收盘计算结果更为可靠.")
+    print("=" * 60)
 
     @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri', hour='9', minute='10', id='reinit')
     def reinit():
         tt0 = datetime.datetime.today()
-        # print("=" * 60)
-        # print("重新初始化...")
+        print("=" * 60)
+        print("重新初始化...")
         rc.getbase()
         rc.last_amorank()
         tt1 = datetime.datetime.today()
-        # print("初始化完成,耗时%s"%(str(tt1-tt0)))
-        # print("=" * 60)
-        # print("交易时间内每隔5分钟计算一次...\n临近收盘计算结果更为可靠.")
-        # print("=" * 60)
+        print("初始化完成,耗时%s"%(str(tt1-tt0)))
+        print("=" * 60)
+        print("交易时间内每隔5分钟计算一次...\n临近收盘计算结果更为可靠.")
+        print("=" * 60)
         gc.collect()
 
     @BS.scheduled_job('cron', max_instances=10, day_of_week='mon-fri', hour='9,10,11,13,14,15', minute='*/5',id='run_cal')
@@ -202,26 +202,29 @@ def run_realtime_cal():
             if 92959< int(time.strftime("%H%M%S"))<150459:
                 if int(time.strftime("%H%M%S"))<113459 or int(time.strftime("%H%M%S"))>130000:
                     tt00 =datetime.datetime.today()
-                    # print("当前时间为：%s"%(tt00))
-                    # print("正在进行计算...")
+                    print("当前时间为：%s"%(tt00))
+                    print("正在进行计算...")
 
                     rc.amorank()
                     rc.cal_araise()
                     macdresult, jmaresult = rc.calc()
                     taresult=list(set(jmaresult+macdresult))
                     finalresult = list(set(taresult).intersection(rc.baselist))
-                    tt44 = datetime.datetime.today()
+                    tt44 =datetime.datetime.today()
 
-                    # print("计算完毕,耗时%s"%(str(tt44-tt00)))
-                    # print("=" * 60)
-                    # print("技术分析结果:\n", str(taresult)[1:-1])
-                    # print("=" * 60)
-                    # print("综合结果：\n", str(finalresult)[1:-1])
-                    # print("=" * 60)
+                    print("计算完毕,耗时%s"%(str(tt44-tt00)))
+                    print("=" * 60)
+                    print("技术分析结果:\n", str(taresult)[1:-1])
+                    print("=" * 60)
+                    print("综合结果：\n", str(finalresult)[1:-1])
+                    print("=" * 60)
                     result = [[tt00,str(taresult)[1:-1].replace("'",""),str(finalresult)[1:-1].replace("'","")]]
                     df = pd.DataFrame(result,columns=['datetime','taresult','finalresult'])
-                    df.to_sql('realtimecal',localconn(),flavor='mysql',schema='stockdata',if_exists='append',index=False)
-                    df.to_sql('realtimecal',serverconn(),flavor='mysql',schema='stockdata',if_exists='append',index=False)
+                    try:
+                        df.to_sql('realtimecal',conn(),schema='stockdata',if_exists='append',index=False)
+                    except Exception as e:
+                        print(e)
+
         gc.collect()
     BS.start()
 

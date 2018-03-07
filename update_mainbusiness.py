@@ -6,7 +6,7 @@ Created on 15:20:00 2017-12-06
 @author: kplam
 """
 from kpfunc.spyder import myspyder
-from kpfunc.getdata import localconn,serverconn,get_stocklist_prefix,local2conn
+from kpfunc.getdata import *
 from kpfunc.function import path
 from time import sleep
 from random import random
@@ -24,15 +24,14 @@ def update_mb_single(code):
     # ser='both'
     proxy=0
     # if ser == 'local' or ser == 'both':
-    conn = localconn()
     # if ser == 'server' or ser == 'both':
     #     conns = serverconn()
-    print("MAINBUSINESS:",code)
+    # print("MAINBUSINESS:",code)
     url = "http://emweb.securities.eastmoney.com/PC_HSF10/BusinessAnalysis/BusinessAnalysisAjax?code="
 
     try:
         html = myspyder(url+code,proxy=proxy)
-        js = json.loads(html.content,encoding='utf-8')
+        js = json.loads(html.content.decode('utf-8'))
         with open("./data/mainbusiness/"+code[2:]+".json",'w',encoding='utf-8') as f:
             f.write(str(html.content,encoding='utf-8'))
         # print(js['zyfw'][0]['ms'])
@@ -50,22 +49,23 @@ def update_mb_single(code):
         df= df[['code','报表日期','主营构成','主营收入','收入比例','主营成本(元)','成本比例',
                                           '主营利润(元)','利润比例','毛利率(%)','分类']].values
         for i in range(len(df)):
-            df[i][4] = df[i][4].replace('%', '')
-            df[i][6] = df[i][6].replace('%', '')
-            df[i][8] = df[i][8].replace('%', '')
-            df[i][9] = df[i][9].replace('%', '')
-            if '万亿' in df[i][5]:
-                df[i][5] = float(df[i][5].replace('万亿', '')) * 1000000000000
-            elif '亿' in df[i][5]:
-                df[i][5] = float(df[i][5].replace('亿', '')) * 100000000
-            elif '万' in df[i][5]:
-                df[i][5] = float(df[i][5].replace('万', '')) * 10000
-            if '万亿' in df[i][7]:
-                df[i][7] = float(df[i][7].replace('万亿', '')) * 1000000000000
-            elif '亿' in df[i][7]:
-                df[i][7] = float(df[i][7].replace('亿', '')) * 100000000
-            elif '万' in df[i][7]:
-                df[i][7] = float(df[i][7].replace('万', '')) * 10000
+            df[i][4] = df[i][4].replace('%', '') if isinstance(df[i][4],str) else df[i][4]
+            df[i][6] = df[i][6].replace('%', '') if isinstance(df[i][6],str) else df[i][6]
+            df[i][8] = df[i][8].replace('%', '') if isinstance(df[i][8],str) else df[i][8]
+            df[i][9] = df[i][9].replace('%', '') if isinstance(df[i][9],str) else df[i][9]
+            if isinstance(df[i][5],str):
+                if '万亿' in df[i][5]:
+                    df[i][5] = float(df[i][5].replace('万亿', '')) * 1000000000000
+                elif '亿' in df[i][5]:
+                    df[i][5] = float(df[i][5].replace('亿', '')) * 100000000
+                elif '万' in df[i][5]:
+                    df[i][5] = float(df[i][5].replace('万', '')) * 10000
+                if '万亿' in df[i][7]:
+                    df[i][7] = float(df[i][7].replace('万亿', '')) * 1000000000000
+                elif '亿' in df[i][7]:
+                    df[i][7] = float(df[i][7].replace('亿', '')) * 100000000
+                elif '万' in df[i][7]:
+                    df[i][7] = float(df[i][7].replace('万', '')) * 10000
         df = pd.DataFrame(df, columns=['code','报表日期','主营构成','主营收入','收入比例','主营成本','成本比例',
                                           '主营利润','利润比例','毛利率','分类'])
         df['报表日期']=pd.to_datetime(df['报表日期'])
@@ -73,33 +73,37 @@ def update_mb_single(code):
         df = df[df['主营构成']!='']
         df = df[df['主营构成']!='--']
         df = df.replace('--', '')
-        # print(df)
+        df['报表日期'] =df['报表日期'].astype('str')
+        params=json.loads(df.to_json(orient='records',force_ascii=False))
+        db=Database()
+        mainbusiness=db.table.mainbusiness
+        db.c(mainbusiness,params)
         # df.to_sql('mainbusiness',conn,flavor='mysql',schema='stockdata',if_exists='append',index=False,chunksize=10000)
-        try:
-            for elem in df.values:
-                sql_update= "insert ignore into `mainbusiness` (code, 报表日期, 主营构成, 主营收入, 收入比例, 主营成本," \
-                            " 成本比例, 主营利润, 利润比例, 毛利率, 分类) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-
-                params = []
-                for param in elem:
-                    if param != '':
-                        params.append(str(param))
-                    else:
-                        params.append(None)
-                # if ser == 'local' or ser == 'both':
-
-                cur =conn.cursor()
-                cur.execute(sql_update,params)
-                conn.commit()
-                # if ser == 'server' or ser == 'both':
-                #     curs =conns.cursor()
-                #     curs.execute(sql_update,params)
-                #     conns.commit()
-        except Exception as e:
-            print("MAINBUSINESS:",code,e)
-            return code
+        # try:
+        #     for elem in df.values:
+        #         sql_update= "insert ignore into `mainbusiness` (code, 报表日期, 主营构成, 主营收入, 收入比例, 主营成本," \
+        #                     " 成本比例, 主营利润, 利润比例, 毛利率, 分类) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        #
+        #         params = []
+        #         for param in elem:
+        #             if param != '':
+        #                 params.append(str(param))
+        #             else:
+        #                 params.append(None)
+        #         # if ser == 'local' or ser == 'both':
+        #
+        #         # cur =conn.cursor()
+        #         engine.execute(sql_update,params)
+        #         # conn.commit()
+        #         # if ser == 'server' or ser == 'both':
+        #         #     curs =conns.cursor()
+        #         #     curs.execute(sql_update,params)
+        #         #     conns.commit()
+        # except Exception as e:
+        #     print("MAINBUSINESS:",code,e)
+        #     return code
     except Exception as e:
-        print("MAINBUSINESS:",e)
+        print("MAINBUSINESS:",code,e)
         return code
 
 def mainbusiness(stocklist=get_stocklist_prefix('sh','sz',1)):

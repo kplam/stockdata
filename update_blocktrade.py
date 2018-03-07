@@ -6,7 +6,7 @@ Created on Fri Nov 10 15:20:00 2017
 @author: kplam
 """
 from kpfunc.spyder import *
-from kpfunc.getdata import localconn,serverconn
+from kpfunc.getdata import *
 import datetime
 import pandas as pd
 from time import sleep
@@ -28,14 +28,10 @@ def get_blocktrade(list_date,ser='both',proxy=0):
             list = list[['code','name','交易日期','买方代码','买方营业部','收盘价','成交价','涨跌幅','卖方代码','卖方营业部','类型','市场','成交额','成交量','单位','YSSLTAG']]
             list = list.replace('-',nan)
             list['收盘价']=list['收盘价'].astype(float)
-            list['交易日期'] = list['交易日期'].astype('datetime64')
+            list['交易日期'] = list['交易日期'].astype('datetime64[ns]')
             list.to_csv('./data/blocktrade/'+str(date)+'.csv')
-            if ser == 'local' or ser == 'both':
-                list.to_sql('blocktrade',localconn(),flavor='mysql',schema='stockdata',if_exists='append',
-                            index=False,chunksize=10000)
-            if ser == 'local' or ser == 'both':
-                list.to_sql('blocktrade', serverconn(), flavor='mysql', schema='stockdata', if_exists='append',
-                            index=False, chunksize=10000)
+            list.to_sql('blocktrade',conn(), schema='stockdata',if_exists='append',
+                        index=False,chunksize=10000)
             sleep(random()/10+3)
             print("BLOCKTRADE:更新完毕！")
         except Exception as e:
@@ -50,7 +46,7 @@ if __name__ == "__main__" :
     # list_date = pd.read_sql(sql_date,conn)['date'].values
     list_date = [today]
     times_retry = 3
-    error = get_blocktrade(list_date=list_date,ser='both',proxy=0)
+    error = get_blocktrade(list_date=list_date,proxy=0)
     while len(error) != 0 and times_retry != 0:
-        error = get_blocktrade(list_date=error,ser='both',proxy=0)
+        error = get_blocktrade(list_date=error,proxy=0)
         times_retry -= 1

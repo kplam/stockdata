@@ -6,7 +6,7 @@ Created on 15:20:00 2017-12-06
 @author: kplam
 """
 
-from kpfunc.getdata import localconn,serverconn
+from kpfunc.getdata import *
 import requests as rqs
 from requests.adapters import HTTPAdapter
 from bs4 import BeautifulSoup as bs
@@ -14,13 +14,6 @@ from random import random
 import re,time,datetime
 import pandas as pd
 
-
-"""
-http://www.55188.com/search.php?searchid=88&orderby=dateline&ascdesc=desc&searchsubmit=yes
-http://www.55188.com/search.php?searchid=88&orderby=dateline&ascdesc=desc&searchsubmit=yes&page=2
-http://www.55188.com/viewthread.php?tid=8265824&page=1&authorid=353347
-
-"""
 
 def myspyder(url):
     s = rqs.session()
@@ -44,99 +37,81 @@ def myspyder(url):
     s.close()
     return rqs_url
 
-# def get_urllist_all():
-#     links=[]
-#     for num in range(1,425):
-#         print(num)
-#         try:
-#             url = "http://www.55188.com/search.php?searchid=88&orderby=dateline&ascdesc=desc&searchsubmit=yes&page=%s"%(num)
-#             html = myspyder(url)
-#             soup = bs(html.content,'html5lib')
-#             soup = soup.select('table')[0]
-#             for link in soup.find_all('a'):
-#                 if re.match(u"http://www.55188.com/viewthread.php\?tid=\d*",link.get('href')):
-#                     links.append(link.get('href'))
-#         except Exception as e:
-#             print(e)
-#         time.sleep(random()/10+0.3)
-#     links = list(set(links))
-#     return links
-
 def get_urllist_one():
     links = []
     try:
-        url = "http://www.55188.com/space-uid-353347.html"
+        url = "http://www.55188.com/forumdisplay.php?fid=8&filter=type&typeid=138&page=4"
         html = myspyder(url)
         doc = bs(html.content, 'html5lib')
-        subject = doc.select('#module_mythreads')[0]
+        subject = doc.select('tbody')
         # print(subject)
-        for i in range(len(subject.select('.center_subject'))):
-            post = subject.select('.center_lastpost')[i]
-            etime = post.find_all('a')[1].text
-            etime = datetime.datetime.strptime(etime, "%Y-%m-%d %H:%M")
-            if etime > datetime.datetime.today() - datetime.timedelta(days=2):
-                # print(etime, subject.select('.center_subject')[i].text)
-
-                link = "http://www.55188.com/" + str(subject.select('.center_subject')[i].a.get('href'))
-                links.append(link)
+        for ele in subject:
+            aherf = ele.select('a')
+            for elem in aherf:
+                if '上证早知道' in elem.text or '时报财富资讯' in elem.text or '中证快报' in elem.text or '中证投资参考' in elem.text:
+                    link = elem.get('href')
+                    if re.match('thread-\d*-\d*-\d*.html',link):
+                        link = "http://www.55188.com/"+link
+                        links.append(link)
+    #     # print(subject)
+    #     for i in range(len(subject.select('.center_subject'))):
+    #         post = subject.select('.center_lastpost')[i]
+    #         etime = post.find_all('a')[1].text
+    #         etime = datetime.datetime.strptime(etime, "%Y-%m-%d %H:%M")
+    #         if etime > datetime.datetime.today() - datetime.timedelta(days=2):
+    #             # print(etime, subject.select('.center_subject')[i].text)
+    #
+    #             link = "http://www.55188.com/" + str(subject.select('.center_subject')[i].a.get('href'))
+    #             links.append(link)
         links = list(set(links))
     except Exception as e:
         print(e)
     return links
 
-
 def get_zzd(links=get_urllist_one(),check=1,ser='both'):
     source = '55188.com'
     stype = '【早知道】'
     # print(links)
+    engine = conn()
     if check ==1:
         checkdate = datetime.date.today() - datetime.timedelta(days=7)
         sql_check = "select `link` from `news` WHERE `type`='【早知道】' and `datetime` >='%s'" % (checkdate)
-        urlchecklistlocal = pd.read_sql(sql_check, localconn())['link'].values
-        urlchecklistserver = pd.read_sql(sql_check, serverconn())['link'].values
+
+        urlchecklistlocal = pd.read_sql(sql_check, engine)['link'].values
 
 
     for link in links:
         if check ==1:
-            if link not in urlchecklistlocal or link not in urlchecklistserver:
-                # print(link)
-                try:
-                    htmldetail = myspyder(link)
-                    soupdetail = bs(htmldetail.content,'html5lib')
 
-                    title = soupdetail.select("tbody > tr:nth-of-type(1) > td.postcontent > div.postmessage > div.post_subject > h2")[0].text
-                    title = title.replace(' ','')
-                    stime = soupdetail.select("tbody > tr:nth-of-type(1) > td.postcontent > div.postinfo")[0].text
-                    stime = re.findall(r"(\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2})",stime)[0]
-                    stime = datetime.datetime.strptime(stime,'%Y-%m-%d %H:%M')
+            if link not in urlchecklistlocal :#or link not in urlchecklistserver:
+                    # print(link)
+                    try:
+                        htmldetail = myspyder(link)
+                        soupdetail = bs(htmldetail.content,'html5lib')
 
-                    content = str(soupdetail.select("#firstpostcontent")[0])
-                    content=content.replace('<font color="#EFEFEF">股票论坛 www.55188.com</font>','')
+                        title = soupdetail.select("tbody > tr:nth-of-type(1) > td.postcontent > div.postmessage > div.post_subject > h2")[0].text
+                        title = title.replace(' ','')
+                        stime = soupdetail.select("tbody > tr:nth-of-type(1) > td.postcontent > div.postinfo")[0].text
+                        stime = re.findall(r"(\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2})",stime)[0]
+                        stime = datetime.datetime.strptime(stime,'%Y-%m-%d %H:%M')
 
-                    param= (source,stype,title,link,content,stime)
-                    print(title, stime, "\n", link)
-                    sql = "INSERT IGNORE INTO `news`(`source`, `type`, `title`, `link`, `content`, `datetime`) VALUES (%s, %s, %s, %s, %s, %s)"
-                    if stime>datetime.datetime.today()-datetime.timedelta(days=2):
-                        if ser=='both' or ser =='local':
+                        content = str(soupdetail.select("#firstpostcontent")[0])
+                        content=content.replace('<font color="#EFEFEF">股票论坛 www.55188.com</font>','')
+
+                        param= (source,stype,title,link,content,stime)
+                        print(title, stime, "\n", link)
+                        sql = "INSERT IGNORE INTO `news`(`source`, `type`, `title`, `link`, `content`, `datetime`) VALUES (%s, %s, %s, %s, %s, %s)"
+                        if stime>datetime.datetime.today()-datetime.timedelta(days=2):
+
                             try:
-                                conn = localconn()
-                                cur = conn.cursor()
-                                cur.execute(sql,param)
-                                conn.commit()
-                                conn.close()
+                                engine.execute(sql,param)
+
                             except Exception as e:
                                 print(e)
-                        if ser == 'both' or ser == 'server':
-                            try:
-                                conns = serverconn()
-                                curs = conns.cursor()
-                                curs.execute(sql,param)
-                                conns.commit()
-                                conns.close()
-                            except Exception as e:
-                                print(e)
-                except Exception as e:
-                    print(e)
+
+                    except Exception as e:
+                        print(e)
+
         else:
             try:
                 htmldetail = myspyder(link)
@@ -157,29 +132,17 @@ def get_zzd(links=get_urllist_one(),check=1,ser='both'):
                 print(title, stime,"\n",link)
                 sql = "INSERT IGNORE INTO `news`(`source`, `type`, `title`, `link`, `content`, `datetime`) VALUES (%s, %s, %s, %s, %s, %s)"
                 if stime > datetime.datetime.today()-datetime.timedelta(days=2):
+                    try:
+                        engine.execute(sql, param)
+                    except Exception as e:
+                        print(e)
 
-                    if ser == 'both' or ser == 'local':
-                        try:
-                            conn = localconn()
-                            cur = conn.cursor()
-                            cur.execute(sql, param)
-                            conn.commit()
-                            conn.close()
-                        except Exception as e:
-                            print(e)
-                    if ser == 'both' or ser == 'server':
-                        try:
-                            conns = serverconn()
-                            curs = conns.cursor()
-                            curs.execute(sql, param)
-                            conns.commit()
-                            conns.close()
-                        except Exception as e:
-                            print(e)
             except Exception as e:
                 print(e)
         time.sleep(random()*10+0.3)
 
 
 if __name__ == '__main__':
-    get_zzd()
+    get_zzd(links=get_urllist_one(),check=1)
+
+

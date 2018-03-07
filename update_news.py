@@ -5,7 +5,7 @@ Created on Fri Nov 10 15:20:00 2017
 "
 @author: kplam
 """
-from kpfunc.getdata import localconn,serverconn
+from kpfunc.getdata import *
 from kpfunc.spyder import myspyder
 from kpfunc.function import path
 from random import random
@@ -40,7 +40,7 @@ def get_news(url,proxy):
     result['datetime'] =result['datetime'].astype('datetime64[ns]')
     return result
 
-def stcn_news(ser='both'):
+def stcn_news():
     """
     :param ser: local/server/both
     :return:
@@ -48,13 +48,14 @@ def stcn_news(ser='both'):
     import datetime
     # ===================
     lastday= datetime.date.today()-datetime.timedelta(days=2)
-    if ser == 'local' or ser == 'both':
-        conn = localconn()
-    if ser == 'server' or ser == 'both':
-        conns = serverconn()
-    #读取最近两天地址，以减少写入次数
     sql_check ="select `link` from `news` where `datetime`>='%s'"%(lastday)
-    linklist=pd.read_sql(sql_check,localconn())['link'].values
+
+    engine = conn()
+    #读取最近两天地址，以减少写入次数
+
+    linklist=pd.read_sql(sql_check,engine)['link'].values
+
+
     # ================================================= #
     pages =range(1,2)
     url= "http://kuaixun.stcn.com/index_%s.shtml"
@@ -73,21 +74,18 @@ def stcn_news(ser='both'):
 
     for j in range(len(newsresult)):
         try:
-            stype=newsresult.get_value(j,'type')
-            title=newsresult.get_value(j,'title')
-            link = newsresult.get_value(j,'link')
-            datetime =newsresult.get_value(j,'datetime')
+            stype=newsresult['type'][j]
+            title=newsresult['title'][j]
+            link = newsresult['link'][j]
+            datetime =newsresult['datetime'][j]
             if link not in linklist:
                 sql_update= "insert ignore INTO `news`(`source`, `type`, `title`, `link`, `datetime`) VALUES (%s,%s,%s,%s,%s)"
                 param=(source,stype,title,link,str(datetime))
-                if ser == 'local' or ser =='both':
-                    cur = conn.cursor()
-                    cur.execute(sql_update,param)
-                    conn.commit()
-                if ser =='server' or ser == 'both':
-                    curs = conns.cursor()
-                    curs.execute(sql_update,param)
-                    conns.commit()
+                    # cur = conn.cursor()
+                engine.execute(sql_update,param)
+
+                    # conn.commit()
+
             else:
                 pass
         except Exception as e:
@@ -97,4 +95,4 @@ def stcn_news(ser='both'):
     dfErrorList.to_csv(path()+'/error/update_news.csv')
 
 if __name__ == '__main__':
-    stcn_news(ser='local')
+    stcn_news()

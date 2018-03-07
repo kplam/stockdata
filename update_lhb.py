@@ -6,13 +6,17 @@ Created on 15:20:00 2017-11-22
 @author: kplam
 """
 from kpfunc.spyder import myspyder
-from kpfunc.getdata import localconn,serverconn
+from kpfunc.getdata import *
 from kpfunc.function import path
 from time import sleep
 from random import random
 import datetime
 import pandas as pd
 import json,re
+
+"""
+http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/LHBGGDRTJ/GetLHBGGDRTJ?tkn=eastmoney&mkt=0&dateNum=&startDateTime=2018-03-01&endDateTime=2018-03-01&sortRule=1&sortColumn=&pageNum=1&pageSize=200&cfg=lhbggdrtj
+"""
 
 
 def get_lhblist(date,proxy):
@@ -41,7 +45,7 @@ def get_lhbdetail(code,date,proxy):
         df_detail = pd.concat((tmp_detail,df_detail))
     return df_detail
 
-def lhb(ser='both'):
+def lhb():
     # sql_date = "select distinct `date` from `indexdb` WHERE `date`>='2017-01-01' ORDER BY `date` ASC "
     # list_date = pd.read_sql(sql_date,localconn())['date'].values
     print("LHB:正在获取成交回报信息...")
@@ -64,21 +68,15 @@ def lhb(ser='both'):
         except Exception as e:
             errorlist.append((str(date),code,e))
         df_lhbdetail.to_csv('./data/lhb/'+str(date)+'.csv',encoding='utf-8')
-        if ser == 'local' or ser == 'both':
-            try:
-                df_lhbdetail.to_sql('lhb',localconn(),flavor='mysql',schema='stockdata',if_exists='append',
-                                    index=True,chunksize=10000)
-            except Exception as e:
-                print(e)
-        if ser == 'server' or ser == 'both':
-            try:
-                df_lhbdetail.to_sql('lhb',serverconn(),flavor='mysql',schema='stockdata',if_exists='append',
-                                    index=True,chunksize=10000)
-            except Exception as e:
-                print(e)
+        try:
+            df_lhbdetail.to_sql('lhb',conn(),schema='stockdata',if_exists='append',
+                                index=True,chunksize=10000)
+        except Exception as e:
+            print(e)
+
     df_error = pd.DataFrame(errorlist)
     df_error.to_csv(path()+'/data/lhb/error.csv')
     print("LHB:更新完毕！")
 
 if __name__ == "__main__" :
-    lhb(ser='both')
+    lhb()

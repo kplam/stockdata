@@ -44,7 +44,7 @@ def ip_check(*path):
         for ip in iplist2:
             ip_list.append("http://"+ip)
     iplist_output=[]
-    socket.setdefaulttimeout(1)
+    socket.setdefaulttimeout(2)
 
     def check(ip):
         proxy_ip = {'http': ip}  # 想验证的代理IP
@@ -73,9 +73,12 @@ def myspyder(url,proxy):
     :param proxy: 0 or 1
     :return: html
     """
-    ip_proxy = get_proxy()
-    ip = random.choice(ip_proxy)
-    proxies = {} if proxy == 0 else {'http':ip}
+    if proxy == 1:
+        ip_proxy = get_proxy()
+        ip = random.choice(ip_proxy)
+        proxies = {'http':ip}
+    else:
+        proxies = {}
 
     # ============ requests setting ============= #
     s = rqs.session()

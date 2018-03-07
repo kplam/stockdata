@@ -6,30 +6,25 @@ today = datetime.date.today()
 wd = datetime.date.today().weekday()
 wdlist='一二三四五六日'
 print("今天是%s, 星期%s。 "%(today,wdlist[wd]))
+engine=conn()
 sql_news_id = "select `id` from `news` WHERE datetime<'%s' ORDER BY `id` DESC limit 1" % (str(today))
 sql_realtime_id = "select `id` from `realtimecal`  WHERE datetime<'%s' ORDER BY `id` DESC limit 1"%(str(today))
-id = pd.read_sql(sql_news_id,localconn())['id'][0]
-id2 = pd.read_sql(sql_realtime_id,localconn())['id'][0]
+id = pd.read_sql(sql_news_id,engine)['id'][0]
+id2 = pd.read_sql(sql_realtime_id,engine)['id'][0]
 sleeptime = 300
+
 while True:
     try:
         sql_news ="select `id`, `datetime`, `type` ,`title` from `news` where id > %s ORDER BY `id` ASC "%(id)
-        conn = localconn()
-        cur = conn.cursor()
-        cur.execute(sql_news)
-        results = cur.fetchall()
-        for row in results:
+        result = engine.execute(sql_news).fetchall()
+        for row in result:
             print(str(row[1])[11:16],(row[2]+row[3])[:34])
             id = row[0]
-        conn.close()
 
         if sleeptime%300==0:
             sql_realtime = "select `id`,`datetime`,`taresult`,`finalresult` from `realtimecal` where id>%s ORDER BY `id` ASC " % (id2)
-            conn = localconn()
-            cur = conn.cursor()
-            cur.execute(sql_realtime)
-            results = cur.fetchall()
 
+            results = engine.execute(sql_realtime).fetchall()
             if len(results)>0:
                 row=results[-1]
                 # for row in results:
@@ -45,7 +40,6 @@ while True:
                 print(row[3] if row[3] else "空")
                 print("="*80+"\n")
                 id2 = row[0]
-            conn.close()
     except Exception as e:
         print(e)
     finally:

@@ -1,24 +1,79 @@
-/*
-SQLyog Ultimate v12.09 (64 bit)
-MySQL - 5.7.20-0ubuntu0.16.04.1 : Database - stockdata
-*********************************************************************
-*/
+-- phpMyAdmin SQL Dump
+-- version 4.5.4.1deb2ubuntu2
+-- http://www.phpmyadmin.net
+--
+-- Host: localhost
+-- Generation Time: 2018-03-01 14:50:28
+-- 服务器版本： 5.7.21-0ubuntu0.16.04.1
+-- PHP Version: 7.0.22-0ubuntu0.16.04.1
 
-/*!40101 SET NAMES utf8 */;
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
 
-/*!40101 SET SQL_MODE=''*/;
 
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-CREATE DATABASE /*!32312 IF NOT EXISTS*/`stockdata` /*!40100 DEFAULT CHARACTER SET utf8 */;
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
-USE `stockdata`;
+--
+-- Database: `stockdata`
+--
 
-/*Table structure for table `5min` */
+DELIMITER $$
+--
+-- 函数
+--
+CREATE DEFINER=`root`@`%` FUNCTION `getPY` (`in_string` VARCHAR(21845)) RETURNS MEDIUMTEXT CHARSET utf8 BEGIN
+DECLARE tmp_str VARCHAR(21845) charset gbk DEFAULT '' ; #截取字符串，每次做截取后的字符串存放在该变量中，初始为函数参数in_string值 
+DECLARE tmp_len SMALLINT DEFAULT 0;#tmp_str的长度 
+DECLARE tmp_char VARCHAR(2) charset gbk DEFAULT '';#截取字符，每次 left(tmp_str,1) 返回值存放在该变量中 
+DECLARE tmp_rs VARCHAR(21845) charset gbk DEFAULT '';#结果字符串 
+DECLARE tmp_cc VARCHAR(2) charset gbk DEFAULT '';#拼音字符，存放单个汉字对应的拼音首字符 
+DECLARE tmp_rsd VARCHAR(21845) CHARSET gbk DEFAULT '';
+SET tmp_str = in_string;#初始化，将in_string赋给tmp_str 
+SET tmp_len = LENGTH(tmp_str);#初始化长度 
+IF POSITION('银行' IN tmp_str)!=0 THEN
+SELECT REPLACE(tmp_str,'银行','YH') INTO tmp_str;
+END IF;
+WHILE tmp_len > 0 DO #如果被计算的tmp_str长度大于0则进入该while 
+SET tmp_char = LEFT(tmp_str,1);#获取tmp_str最左端的首个字符，注意这里是获取首个字符，该字符可能是汉字，也可能不是。 
+SET tmp_cc = tmp_char;#左端首个字符赋值给拼音字符 
+IF LENGTH(tmp_char)>1 THEN#判断左端首个字符是多字节还是单字节字符，要是多字节则认为是汉字且作以下拼音获取，要是单字节则不处理。 
+SELECT ELT(INTERVAL(CONV(HEX(tmp_char),16,10),0xB0A1,0xB0C5,0xB2C1,0xB4EE,0xB6EA,0xB7A2,0xB8C1,0xB9FE,0xBBF7,0xBFA6,0xC0AC 
+,0xC2E8,0xC4C3,0xC5B6,0xC5BE,0xC6DA,0xC8BB,0xC8F6,0xCBFA,0xCDDA ,0xCEF4,0xD1B9,0xD4D1), 
+'A','B','C','D','E','F','G','H','J','K','L','M','N','O','P','Q','R','S','T','W','X','Y','Z') INTO tmp_cc; #获得汉字拼音首字符 
+END IF; 
+SET tmp_rs = CONCAT(tmp_rs,tmp_cc);#将当前tmp_str左端首个字符拼音首字符与返回字符串拼接 
+SET tmp_str = SUBSTRING(tmp_str,2);#将tmp_str左端首字符去除 
+SET tmp_len = LENGTH(tmp_str);#计算当前字符串长度 
+END WHILE; 
+RETURN tmp_rs;#返回结果字符串 
+END$$
 
-DROP TABLE IF EXISTS `5min`;
+CREATE DEFINER=`root`@`%` FUNCTION `test` (`in_string` VARCHAR(21845)) RETURNS MEDIUMTEXT CHARSET utf8 BEGIN
+DECLARE tmp_str VARCHAR(21845) CHARSET gbk DEFAULT '' ; #截取字符串，每次做截取后的字符串存放在该变量中，初始为函数参数in_string值 
+DECLARE tmp_len SMALLINT DEFAULT 0;#tmp_str的长度 
+DECLARE tmp_char VARCHAR(2) CHARSET gbk DEFAULT '';#截取字符，每次 left(tmp_str,1) 返回值存放在该变量中 
+DECLARE tmp_rs VARCHAR(21845) CHARSET gbk DEFAULT '';#结果字符串 
+DECLARE tmp_cc VARCHAR(2) CHARSET gbk DEFAULT '';#拼音字符，存放单个汉字对应的拼音首字符 
+DECLARE tmp_rsd VARCHAR(21845) CHARSET gbk DEFAULT '';
+SET tmp_str = in_string;#初始化，将in_string赋给tmp_str 
+SET tmp_len = LENGTH(tmp_str);#初始化长度 
+IF POSITION('银行' IN tmp_str)!=0 THEN
+SELECT REPLACE(tmp_str,'银行','YH') INTO tmp_rsd;
+ELSE SET tmp_rsd = '银行';
+END IF;
+RETURN tmp_rsd;#返回结果字符串 
+END$$
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `5min`
+--
 
 CREATE TABLE `5min` (
   `code` varchar(6) NOT NULL,
@@ -28,13 +83,14 @@ CREATE TABLE `5min` (
   `low` float NOT NULL,
   `close` float NOT NULL,
   `vol` float NOT NULL,
-  `amo` float NOT NULL,
-  PRIMARY KEY (`code`,`datetime`)
+  `amo` float NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `basedata` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `basedata`;
+--
+-- 表的结构 `basedata`
+--
 
 CREATE TABLE `basedata` (
   `证券代码` varchar(30) NOT NULL,
@@ -47,7 +103,7 @@ CREATE TABLE `basedata` (
   `工商登记号` varchar(30) DEFAULT NULL,
   `注册资本` varchar(30) DEFAULT NULL,
   `法人代表` longtext,
-  `所属证监会行业` enum('交通运输、仓储和邮政业','住宿和餐饮业','信息传输、软件和信息技术服务业','农、林、牧、渔业','制造业','卫生和社会工作','建筑业','房地产业','批发和零售业','教育','文化、体育和娱乐业','水利、环境和公共设施管理业','电力、热力、燃气及水生产和供应业','科学研究和技术服务业','租赁和商务服务业','综合','采矿业','金融业') DEFAULT NULL,
+  `所属证监会行业` enum('交通运输、仓储和邮政业','住宿和餐饮业','信息传输、软件和信息技术服务业','农、林、牧、渔业','制造业','卫生和社会工作','建筑业','房地产业','批发和零售业','教育','文化、体育和娱乐业','水利、环境和公共设施管理业','电力、热力、燃气及水生产和供应业','科学研究和技术服务业','租赁和商务服务业','综合','采矿业','金融业','居民服务、修理和其他服务业') DEFAULT NULL,
   `员工总数` longtext,
   `总经理` varchar(30) DEFAULT NULL,
   `董事会秘书` varchar(30) DEFAULT NULL,
@@ -74,18 +130,25 @@ CREATE TABLE `basedata` (
   `实际控制人类型` enum('','信托投资公司','其它','其它,其它金融公司,投资公司','其它,投资公司','其它,自然人','国务院所属部委','国务院直属事业单位','国务院直属机构','国务院直属特设机构','地方各级人民政府','地方所属部委','地方政府国有资产管理机构','地方政府国有资产管理机构,投资公司','地方政府财政部门','基金会','投资公司','投资公司,自然人','无控制人','自然人','资产管理公司','金融控股集团','高等院校') DEFAULT NULL,
   `央企控制人名称` varchar(128) DEFAULT NULL,
   `控股股东名称` varchar(256) DEFAULT NULL,
-  `控股股东类型` enum('','信托投资公司','其它','其它,投资公司','其它,投资公司,自然人','其它,投资公司,资产管理公司','其它,自然人','其它金融公司','创业投资公司','创业投资公司,投资公司','国务院直属事业单位','地方政府国有资产管理机构','地方政府财政部门','基金管理公司','投资公司','投资公司,自然人','无控制人','综合保险公司','自然人','资产管理公司','金融控股集团','高等院校') DEFAULT NULL,
-  PRIMARY KEY (`证券代码`),
-  KEY `证券简称` (`证券简称`),
-  CONSTRAINT `basedata_ibfk_1` FOREIGN KEY (`证券代码`) REFERENCES `stocklist` (`证券代码`)
+  `控股股东类型` enum('','信托投资公司','其它','其它,投资公司','其它,投资公司,自然人','其它,投资公司,资产管理公司','其它,自然人','其它金融公司','创业投资公司','创业投资公司,投资公司','国务院直属事业单位','地方政府国有资产管理机构','地方政府财政部门','基金管理公司','投资公司','投资公司,自然人','无控制人','综合保险公司','自然人','资产管理公司','金融控股集团','高等院校') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `blocktrade` */
+--
+-- 触发器 `basedata`
+--
+DELIMITER $$
+CREATE TRIGGER `update_stocklist` AFTER UPDATE ON `basedata` FOR EACH ROW update `stocklist` set `stocklist`.`证券简称`=new.`证券简称`,`stocklist`.`拼音缩写`=getPY(new.`证券简称`) WHERE `stocklist`.`证券代码`=new.`证券代码`
+$$
+DELIMITER ;
 
-DROP TABLE IF EXISTS `blocktrade`;
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `blocktrade`
+--
 
 CREATE TABLE `blocktrade` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL,
   `code` varchar(63) NOT NULL,
   `name` varchar(63) DEFAULT NULL,
   `交易日期` date NOT NULL,
@@ -101,26 +164,49 @@ CREATE TABLE `blocktrade` (
   `成交额` double DEFAULT NULL,
   `成交量` double DEFAULT NULL,
   `单位` enum('万手','万股') DEFAULT NULL,
-  `YSSLTAG` double DEFAULT NULL,
-  PRIMARY KEY (`id`,`code`,`交易日期`),
-  KEY `cdoe` (`code`,`买方营业部`,`卖方营业部`),
-  KEY `类型` (`类型`)
-) ENGINE=InnoDB AUTO_INCREMENT=179667 DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`交易日期`))
-(PARTITION p10 VALUES LESS THAN (2011) ENGINE = InnoDB,
- PARTITION p11 VALUES LESS THAN (2012) ENGINE = InnoDB,
- PARTITION p12 VALUES LESS THAN (2013) ENGINE = InnoDB,
- PARTITION p13 VALUES LESS THAN (2014) ENGINE = InnoDB,
- PARTITION p14 VALUES LESS THAN (2015) ENGINE = InnoDB,
- PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
- PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
- PARTITION p18 VALUES LESS THAN (2019) ENGINE = InnoDB,
- PARTITION p19 VALUES LESS THAN (2020) ENGINE = InnoDB) */;
+  `YSSLTAG` double DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+PARTITION BY RANGE (YEAR(`交易日期`))
+(
+PARTITION p10 VALUES LESS THAN (2011)ENGINE=InnoDB,
+PARTITION p11 VALUES LESS THAN (2012)ENGINE=InnoDB,
+PARTITION p12 VALUES LESS THAN (2013)ENGINE=InnoDB,
+PARTITION p13 VALUES LESS THAN (2014)ENGINE=InnoDB,
+PARTITION p14 VALUES LESS THAN (2015)ENGINE=InnoDB,
+PARTITION p15 VALUES LESS THAN (2016)ENGINE=InnoDB,
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `buyback` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `buyback`;
+--
+-- 表的结构 `blog`
+--
+
+CREATE TABLE `blog` (
+  `id` int(11) NOT NULL,
+  `type` varchar(32) DEFAULT NULL,
+  `datetime` datetime DEFAULT NULL,
+  `title` varchar(256) DEFAULT NULL,
+  `author` varchar(32) DEFAULT NULL,
+  `content` longtext,
+  `lastupdate` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `buyback`
+--
 
 CREATE TABLE `buyback` (
   `证劵代码` varchar(12) NOT NULL,
@@ -138,13 +224,14 @@ CREATE TABLE `buyback` (
   `回购资金来源` enum('','自有资金','自有资金,自筹资金','自筹资金') DEFAULT NULL,
   `回购股份方式` enum('定向回购','集中竞价交易') DEFAULT NULL,
   `回购股份实施期限` varchar(63) DEFAULT NULL,
-  `备注` longtext,
-  PRIMARY KEY (`证劵代码`,`方案进度`,`董事会通过日`,`股份种类`)
+  `备注` longtext
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `capitalchange` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `capitalchange`;
+--
+-- 表的结构 `capitalchange`
+--
 
 CREATE TABLE `capitalchange` (
   `﻿股票代码` varchar(63) NOT NULL,
@@ -158,14 +245,14 @@ CREATE TABLE `capitalchange` (
   `流通B股_前值` double DEFAULT NULL,
   `总股本` double DEFAULT NULL,
   `流通A股` double DEFAULT NULL,
-  `流通B股` double DEFAULT NULL,
-  PRIMARY KEY (`﻿股票代码`,`变动日期`),
-  KEY `变动日期` (`变动日期`)
+  `流通B股` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `cirholder` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `cirholder`;
+--
+-- 表的结构 `cirholder`
+--
 
 CREATE TABLE `cirholder` (
   `code` varchar(12) NOT NULL,
@@ -176,17 +263,27 @@ CREATE TABLE `cirholder` (
   `quantity` double DEFAULT NULL,
   `percentage` double DEFAULT NULL,
   `change` double DEFAULT NULL,
-  `abh` enum('A股','A股,B股','A股,H股','A股,S股','B股','B股,H股','H股','H股,A股','H股,B股','S股','不详') DEFAULT NULL,
-  PRIMARY KEY (`code`,`date`,`name`)
+  `abh` enum('A股','A股,B股','A股,H股','A股,S股','B股','B股,H股','H股','H股,A股','H股,B股','S股','不详') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`date`))
-(PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
- PARTITION p0000 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
+PARTITION BY RANGE (YEAR(`date`))
+(
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `dayline` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `dayline`;
+--
+-- 表的结构 `dayline`
+--
 
 CREATE TABLE `dayline` (
   `code` varchar(30) NOT NULL,
@@ -198,105 +295,103 @@ CREATE TABLE `dayline` (
   `vol` float NOT NULL,
   `amo` float NOT NULL,
   `adjfactor` float DEFAULT '1',
-  `adjcump` float DEFAULT '1',
-  PRIMARY KEY (`code`,`date`),
-  KEY `date` (`date`)
+  `adjcump` float DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`date`))
-(PARTITION p92 VALUES LESS THAN (1993) ENGINE = InnoDB,
- PARTITION p93 VALUES LESS THAN (1994) ENGINE = InnoDB,
- PARTITION p94 VALUES LESS THAN (1995) ENGINE = InnoDB,
- PARTITION p95 VALUES LESS THAN (1996) ENGINE = InnoDB,
- PARTITION p96 VALUES LESS THAN (1997) ENGINE = InnoDB,
- PARTITION p97 VALUES LESS THAN (1998) ENGINE = InnoDB,
- PARTITION p98 VALUES LESS THAN (1999) ENGINE = InnoDB,
- PARTITION p99 VALUES LESS THAN (2000) ENGINE = InnoDB,
- PARTITION p00 VALUES LESS THAN (2001) ENGINE = InnoDB,
- PARTITION p01 VALUES LESS THAN (2002) ENGINE = InnoDB,
- PARTITION p02 VALUES LESS THAN (2003) ENGINE = InnoDB,
- PARTITION p03 VALUES LESS THAN (2004) ENGINE = InnoDB,
- PARTITION p04 VALUES LESS THAN (2005) ENGINE = InnoDB,
- PARTITION p05 VALUES LESS THAN (2006) ENGINE = InnoDB,
- PARTITION p06 VALUES LESS THAN (2007) ENGINE = InnoDB,
- PARTITION p07 VALUES LESS THAN (2008) ENGINE = InnoDB,
- PARTITION p08 VALUES LESS THAN (2009) ENGINE = InnoDB,
- PARTITION p09 VALUES LESS THAN (2010) ENGINE = InnoDB,
- PARTITION p10 VALUES LESS THAN (2011) ENGINE = InnoDB,
- PARTITION p11 VALUES LESS THAN (2012) ENGINE = InnoDB,
- PARTITION p12 VALUES LESS THAN (2013) ENGINE = InnoDB,
- PARTITION p13 VALUES LESS THAN (2014) ENGINE = InnoDB,
- PARTITION p14 VALUES LESS THAN (2015) ENGINE = InnoDB,
- PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
- PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
- PARTITION p18 VALUES LESS THAN (2019) ENGINE = InnoDB,
- PARTITION p19 VALUES LESS THAN (2020) ENGINE = InnoDB) */;
+PARTITION BY RANGE (YEAR(`date`))
+(
+PARTITION p92 VALUES LESS THAN (1993)ENGINE=InnoDB,
+PARTITION p93 VALUES LESS THAN (1994)ENGINE=InnoDB,
+PARTITION p94 VALUES LESS THAN (1995)ENGINE=InnoDB,
+PARTITION p95 VALUES LESS THAN (1996)ENGINE=InnoDB,
+PARTITION p96 VALUES LESS THAN (1997)ENGINE=InnoDB,
+PARTITION p97 VALUES LESS THAN (1998)ENGINE=InnoDB,
+PARTITION p98 VALUES LESS THAN (1999)ENGINE=InnoDB,
+PARTITION p99 VALUES LESS THAN (2000)ENGINE=InnoDB,
+PARTITION p00 VALUES LESS THAN (2001)ENGINE=InnoDB,
+PARTITION p01 VALUES LESS THAN (2002)ENGINE=InnoDB,
+PARTITION p02 VALUES LESS THAN (2003)ENGINE=InnoDB,
+PARTITION p03 VALUES LESS THAN (2004)ENGINE=InnoDB,
+PARTITION p04 VALUES LESS THAN (2005)ENGINE=InnoDB,
+PARTITION p05 VALUES LESS THAN (2006)ENGINE=InnoDB,
+PARTITION p06 VALUES LESS THAN (2007)ENGINE=InnoDB,
+PARTITION p07 VALUES LESS THAN (2008)ENGINE=InnoDB,
+PARTITION p08 VALUES LESS THAN (2009)ENGINE=InnoDB,
+PARTITION p09 VALUES LESS THAN (2010)ENGINE=InnoDB,
+PARTITION p10 VALUES LESS THAN (2011)ENGINE=InnoDB,
+PARTITION p11 VALUES LESS THAN (2012)ENGINE=InnoDB,
+PARTITION p12 VALUES LESS THAN (2013)ENGINE=InnoDB,
+PARTITION p13 VALUES LESS THAN (2014)ENGINE=InnoDB,
+PARTITION p14 VALUES LESS THAN (2015)ENGINE=InnoDB,
+PARTITION p15 VALUES LESS THAN (2016)ENGINE=InnoDB,
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `dayline_tmp` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `dayline_tmp`;
+--
+-- 表的结构 `dayline_tmp`
+--
 
 CREATE TABLE `dayline_tmp` (
   `code` varchar(30) NOT NULL,
   `date` date NOT NULL DEFAULT '1990-01-01',
   `adjfactor` float DEFAULT '1',
-  `adjcump` float DEFAULT '1',
-  PRIMARY KEY (`code`,`date`),
-  KEY `date` (`date`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`date`))
-(PARTITION p92 VALUES LESS THAN (1993) ENGINE = InnoDB,
- PARTITION p93 VALUES LESS THAN (1994) ENGINE = InnoDB,
- PARTITION p94 VALUES LESS THAN (1995) ENGINE = InnoDB,
- PARTITION p95 VALUES LESS THAN (1996) ENGINE = InnoDB,
- PARTITION p96 VALUES LESS THAN (1997) ENGINE = InnoDB,
- PARTITION p97 VALUES LESS THAN (1998) ENGINE = InnoDB,
- PARTITION p98 VALUES LESS THAN (1999) ENGINE = InnoDB,
- PARTITION p99 VALUES LESS THAN (2000) ENGINE = InnoDB,
- PARTITION p00 VALUES LESS THAN (2001) ENGINE = InnoDB,
- PARTITION p01 VALUES LESS THAN (2002) ENGINE = InnoDB,
- PARTITION p02 VALUES LESS THAN (2003) ENGINE = InnoDB,
- PARTITION p03 VALUES LESS THAN (2004) ENGINE = InnoDB,
- PARTITION p04 VALUES LESS THAN (2005) ENGINE = InnoDB,
- PARTITION p05 VALUES LESS THAN (2006) ENGINE = InnoDB,
- PARTITION p06 VALUES LESS THAN (2007) ENGINE = InnoDB,
- PARTITION p07 VALUES LESS THAN (2008) ENGINE = InnoDB,
- PARTITION p08 VALUES LESS THAN (2009) ENGINE = InnoDB,
- PARTITION p09 VALUES LESS THAN (2010) ENGINE = InnoDB,
- PARTITION p10 VALUES LESS THAN (2011) ENGINE = InnoDB,
- PARTITION p11 VALUES LESS THAN (2012) ENGINE = InnoDB,
- PARTITION p12 VALUES LESS THAN (2013) ENGINE = InnoDB,
- PARTITION p13 VALUES LESS THAN (2014) ENGINE = InnoDB,
- PARTITION p14 VALUES LESS THAN (2015) ENGINE = InnoDB,
- PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
- PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p0000 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
+  `adjcump` float DEFAULT '1'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `faresult` */
+--
+-- 触发器 `dayline_tmp`
+--
+DELIMITER $$
+CREATE TRIGGER `update_adjfactor_sync` AFTER INSERT ON `dayline_tmp` FOR EACH ROW UPDATE `dayline`
+SET 
+`dayline`.`adjfactor`=NEW.`adjfactor`,
+`dayline`.`adjcump`=NEW.`adjcump`
+WHERE
+`dayline`.`code`=NEW.`code` AND
+`dayline`.`date`=NEW.`date`
+$$
+DELIMITER ;
 
-DROP TABLE IF EXISTS `faresult`;
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `faresult`
+--
 
 CREATE TABLE `faresult` (
   `代码` varchar(63) DEFAULT NULL,
   `报表日期` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `favorite` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `favorite`;
+--
+-- 表的结构 `favorite`
+--
 
 CREATE TABLE `favorite` (
-  `favorite_id` int(11) NOT NULL AUTO_INCREMENT,
+  `favorite_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `stock_code` varchar(30) NOT NULL,
   `stock_name` varchar(30) NOT NULL,
-  `add_date` date NOT NULL,
-  PRIMARY KEY (`favorite_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=599 DEFAULT CHARSET=utf8;
+  `add_date` date NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `financial` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `financial`;
+--
+-- 表的结构 `financial`
+--
 
 CREATE TABLE `financial` (
   `名称` varchar(30) NOT NULL,
@@ -544,41 +639,71 @@ CREATE TABLE `financial` (
   `每股筹资活动产生现金流量净额` float DEFAULT NULL,
   `每股现金及现金等价物净增加额` float DEFAULT NULL,
   `现金流量满足率` float DEFAULT NULL,
-  `现金营运指数` float DEFAULT NULL,
-  PRIMARY KEY (`报表日期`,`代码`),
-  KEY `代码` (`代码`)
+  `现金营运指数` float DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`报表日期`))
-(PARTITION p92 VALUES LESS THAN (1993) ENGINE = InnoDB,
- PARTITION p93 VALUES LESS THAN (1994) ENGINE = InnoDB,
- PARTITION p94 VALUES LESS THAN (1995) ENGINE = InnoDB,
- PARTITION p95 VALUES LESS THAN (1996) ENGINE = InnoDB,
- PARTITION p96 VALUES LESS THAN (1997) ENGINE = InnoDB,
- PARTITION p97 VALUES LESS THAN (1998) ENGINE = InnoDB,
- PARTITION p98 VALUES LESS THAN (1999) ENGINE = InnoDB,
- PARTITION p99 VALUES LESS THAN (2000) ENGINE = InnoDB,
- PARTITION p00 VALUES LESS THAN (2001) ENGINE = InnoDB,
- PARTITION p01 VALUES LESS THAN (2002) ENGINE = InnoDB,
- PARTITION p02 VALUES LESS THAN (2003) ENGINE = InnoDB,
- PARTITION p03 VALUES LESS THAN (2004) ENGINE = InnoDB,
- PARTITION p04 VALUES LESS THAN (2005) ENGINE = InnoDB,
- PARTITION p05 VALUES LESS THAN (2006) ENGINE = InnoDB,
- PARTITION p06 VALUES LESS THAN (2007) ENGINE = InnoDB,
- PARTITION p07 VALUES LESS THAN (2008) ENGINE = InnoDB,
- PARTITION p08 VALUES LESS THAN (2009) ENGINE = InnoDB,
- PARTITION p09 VALUES LESS THAN (2010) ENGINE = InnoDB,
- PARTITION p10 VALUES LESS THAN (2011) ENGINE = InnoDB,
- PARTITION p11 VALUES LESS THAN (2012) ENGINE = InnoDB,
- PARTITION p12 VALUES LESS THAN (2013) ENGINE = InnoDB,
- PARTITION p13 VALUES LESS THAN (2014) ENGINE = InnoDB,
- PARTITION p14 VALUES LESS THAN (2015) ENGINE = InnoDB,
- PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
- PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p0000 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
+PARTITION BY RANGE (YEAR(`报表日期`))
+(
+PARTITION p92 VALUES LESS THAN (1993)ENGINE=InnoDB,
+PARTITION p93 VALUES LESS THAN (1994)ENGINE=InnoDB,
+PARTITION p94 VALUES LESS THAN (1995)ENGINE=InnoDB,
+PARTITION p95 VALUES LESS THAN (1996)ENGINE=InnoDB,
+PARTITION p96 VALUES LESS THAN (1997)ENGINE=InnoDB,
+PARTITION p97 VALUES LESS THAN (1998)ENGINE=InnoDB,
+PARTITION p98 VALUES LESS THAN (1999)ENGINE=InnoDB,
+PARTITION p99 VALUES LESS THAN (2000)ENGINE=InnoDB,
+PARTITION p00 VALUES LESS THAN (2001)ENGINE=InnoDB,
+PARTITION p01 VALUES LESS THAN (2002)ENGINE=InnoDB,
+PARTITION p02 VALUES LESS THAN (2003)ENGINE=InnoDB,
+PARTITION p03 VALUES LESS THAN (2004)ENGINE=InnoDB,
+PARTITION p04 VALUES LESS THAN (2005)ENGINE=InnoDB,
+PARTITION p05 VALUES LESS THAN (2006)ENGINE=InnoDB,
+PARTITION p06 VALUES LESS THAN (2007)ENGINE=InnoDB,
+PARTITION p07 VALUES LESS THAN (2008)ENGINE=InnoDB,
+PARTITION p08 VALUES LESS THAN (2009)ENGINE=InnoDB,
+PARTITION p09 VALUES LESS THAN (2010)ENGINE=InnoDB,
+PARTITION p10 VALUES LESS THAN (2011)ENGINE=InnoDB,
+PARTITION p11 VALUES LESS THAN (2012)ENGINE=InnoDB,
+PARTITION p12 VALUES LESS THAN (2013)ENGINE=InnoDB,
+PARTITION p13 VALUES LESS THAN (2014)ENGINE=InnoDB,
+PARTITION p14 VALUES LESS THAN (2015)ENGINE=InnoDB,
+PARTITION p15 VALUES LESS THAN (2016)ENGINE=InnoDB,
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `forecast` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `forecast`;
+--
+-- 表的结构 `financial_rank`
+--
+
+CREATE TABLE `financial_rank` (
+  `代码` varchar(63) NOT NULL,
+  `名称` varchar(63) DEFAULT NULL,
+  `报表日期` date NOT NULL,
+  `可持续评分` float DEFAULT NULL,
+  `成长评分` float DEFAULT NULL,
+  `稳定性评分` float DEFAULT NULL,
+  `产品评分` float DEFAULT NULL,
+  `经营评分` float DEFAULT NULL,
+  `收款评分` float DEFAULT NULL,
+  `资产评分` float DEFAULT NULL,
+  `总评分` float DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `forecast`
+--
 
 CREATE TABLE `forecast` (
   `code` varchar(30) NOT NULL,
@@ -589,16 +714,14 @@ CREATE TABLE `forecast` (
   `同期净利润` double NOT NULL,
   `财报日期` date NOT NULL DEFAULT '1990-01-01',
   `上限` float DEFAULT NULL,
-  `下限` float DEFAULT NULL,
-  PRIMARY KEY (`code`,`date`,`财报日期`),
-  KEY `下限` (`下限`),
-  KEY `上限` (`上限`),
-  KEY `预告类型` (`预告类型`)
+  `下限` float DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `ftsplit` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `ftsplit`;
+--
+-- 表的结构 `ftsplit`
+--
 
 CREATE TABLE `ftsplit` (
   `code` varchar(30) NOT NULL,
@@ -610,14 +733,14 @@ CREATE TABLE `ftsplit` (
   `前收盘价` float DEFAULT '0',
   `除权价` float DEFAULT '0',
   `单次复权因子` float DEFAULT '1',
-  `累计复权因子` float DEFAULT '1',
-  PRIMARY KEY (`code`,`date`),
-  KEY `date` (`date`)
+  `累计复权因子` float DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `incentive` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `incentive`;
+--
+-- 表的结构 `incentive`
+--
 
 CREATE TABLE `incentive` (
   `股票代码` varchar(12) NOT NULL,
@@ -636,15 +759,14 @@ CREATE TABLE `incentive` (
   `股东大会通过日` date DEFAULT NULL,
   `独立财务顾问` varchar(63) DEFAULT NULL,
   `律师事务所` varchar(63) DEFAULT NULL,
-  `备注` longtext,
-  PRIMARY KEY (`股票代码`,`激励标的物`,`薪酬委员会预案公告日`),
-  KEY `本期计划制定年度` (`本期计划制定年度`),
-  KEY `方案进度` (`方案进度`)
+  `备注` longtext
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `indexdb` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `indexdb`;
+--
+-- 表的结构 `indexdb`
+--
 
 CREATE TABLE `indexdb` (
   `code` varchar(30) NOT NULL,
@@ -654,39 +776,76 @@ CREATE TABLE `indexdb` (
   `low` float NOT NULL,
   `close` float NOT NULL,
   `vol` float NOT NULL,
-  `amo` float NOT NULL,
-  PRIMARY KEY (`code`,`date`),
-  KEY `date` (`date`)
+  `amo` float NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `indexlist` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `indexlist`;
+--
+-- 表的结构 `indexlist`
+--
 
 CREATE TABLE `indexlist` (
   `code` varchar(30) NOT NULL,
   `market` varchar(30) NOT NULL,
   `name` varchar(30) DEFAULT NULL,
-  `short` varchar(8) DEFAULT NULL,
-  PRIMARY KEY (`code`)
+  `short` varchar(8) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `indicator` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `indicator`;
+--
+-- 表的结构 `indicator`
+--
 
 CREATE TABLE `indicator` (
   `name` varchar(60) NOT NULL,
   `short` varchar(30) NOT NULL,
   `input` longtext NOT NULL,
   `output` longtext NOT NULL,
-  `main` tinyint(1) DEFAULT '0',
-  UNIQUE KEY `short` (`short`)
+  `main` tinyint(1) DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `lhb` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `lhb`;
+--
+-- 表的结构 `institutional`
+--
+
+CREATE TABLE `institutional` (
+  `code` varchar(12) NOT NULL,
+  `date` date NOT NULL,
+  `fundcode` varchar(16) NOT NULL,
+  `fundname` varchar(128) DEFAULT NULL,
+  `type` enum('QFII','保险','信托','券商','基金','社保') DEFAULT NULL,
+  `vol` int(16) DEFAULT NULL,
+  `amo` double DEFAULT NULL,
+  `percent` double DEFAULT NULL,
+  `percent_cir` double DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+PARTITION BY RANGE (YEAR(`date`))
+(
+PARTITION p12 VALUES LESS THAN (2013)ENGINE=InnoDB,
+PARTITION p13 VALUES LESS THAN (2014)ENGINE=InnoDB,
+PARTITION p14 VALUES LESS THAN (2015)ENGINE=InnoDB,
+PARTITION p15 VALUES LESS THAN (2016)ENGINE=InnoDB,
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `lhb`
+--
 
 CREATE TABLE `lhb` (
   `index` int(2) NOT NULL,
@@ -703,21 +862,40 @@ CREATE TABLE `lhb` (
   `营业部名称` varchar(256) DEFAULT NULL,
   `买入金额占总成交额` double DEFAULT NULL,
   `卖出金额占总成交额` double DEFAULT NULL,
-  `上榜总成交额` double DEFAULT NULL,
-  PRIMARY KEY (`index`,`date`,`code`,`上榜原因`),
-  KEY `营业部名称` (`营业部名称`)
+  `上榜总成交额` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`date`))
-(PARTITION p14 VALUES LESS THAN (2015) ENGINE = InnoDB,
- PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
- PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
- PARTITION p18 VALUES LESS THAN (2019) ENGINE = InnoDB,
- PARTITION p19 VALUES LESS THAN (2020) ENGINE = InnoDB) */;
+PARTITION BY RANGE (YEAR(`date`))
+(
+PARTITION p14 VALUES LESS THAN (2015)ENGINE=InnoDB,
+PARTITION p15 VALUES LESS THAN (2016)ENGINE=InnoDB,
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `mainbusiness` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `mainbusiness`;
+--
+-- 表的结构 `lhb_base`
+--
+
+CREATE TABLE `lhb_base` (
+  `营业部代码` varchar(63) NOT NULL,
+  `级别` bigint(20) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `mainbusiness`
+--
 
 CREATE TABLE `mainbusiness` (
   `code` varchar(63) NOT NULL,
@@ -730,20 +908,28 @@ CREATE TABLE `mainbusiness` (
   `主营利润` double DEFAULT NULL,
   `利润比例` float DEFAULT NULL,
   `毛利率` float DEFAULT NULL,
-  `分类` enum('产品','行业','地区','') NOT NULL,
-  PRIMARY KEY (`code`,`报表日期`,`主营构成`,`分类`)
+  `分类` enum('产品','行业','地区','') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`报表日期`))
-(PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
- PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
- PARTITION p18 VALUES LESS THAN (2019) ENGINE = InnoDB,
- PARTITION p19 VALUES LESS THAN (2020) ENGINE = InnoDB,
- PARTITION p20 VALUES LESS THAN (2021) ENGINE = InnoDB) */;
+PARTITION BY RANGE (YEAR(`报表日期`))
+(
+PARTITION p15 VALUES LESS THAN (2016)ENGINE=InnoDB,
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `managerial` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `managerial`;
+--
+-- 表的结构 `managerial`
+--
 
 CREATE TABLE `managerial` (
   `code` char(6) NOT NULL,
@@ -758,36 +944,37 @@ CREATE TABLE `managerial` (
   `变动金额` float NOT NULL,
   `职务` varchar(63) NOT NULL,
   `变动比例` decimal(10,8) NOT NULL,
-  `董监高人员姓名` varchar(128) NOT NULL,
-  PRIMARY KEY (`code`,`日期`,`变动人`,`持股种类`,`变动股数`,`变动后持股数`,`成交均价`,`变动人与董监高的关系`,`变动方式`,`变动金额`,`职务`,`变动比例`,`董监高人员姓名`)
+  `董监高人员姓名` varchar(128) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`日期`))
-(PARTITION p05 VALUES LESS THAN (2010) ENGINE = InnoDB,
- PARTITION p10 VALUES LESS THAN (2015) ENGINE = InnoDB,
- PARTITION p15 VALUES LESS THAN (2020) ENGINE = InnoDB,
- PARTITION p20 VALUES LESS THAN (2025) ENGINE = InnoDB) */;
+PARTITION BY RANGE (YEAR(`日期`))
+(
+PARTITION p05 VALUES LESS THAN (2010)ENGINE=InnoDB,
+PARTITION p10 VALUES LESS THAN (2015)ENGINE=InnoDB,
+PARTITION p15 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2025)ENGINE=InnoDB
+);
 
-/*Table structure for table `news` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `news`;
+--
+-- 表的结构 `news`
+--
 
 CREATE TABLE `news` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `source` enum('stcn.com') NOT NULL,
-  `type` enum('【中签号查询】','【公司】','【其他】','【创投】','【数据】','【新三板】','【新股日历】','【最新股价】','【机构新闻】','【海外】','【港股】','【看点数据】','【财经新闻】','【资金流向】') DEFAULT NULL,
+  `id` int(11) NOT NULL,
+  `source` enum('stcn.com','zf826.com','55188.com') NOT NULL,
+  `type` enum('【中签号查询】','【公司】','【其他】','【创投】','【数据】','【新三板】','【新股日历】','【最新股价】','【机构新闻】','【海外】','【港股】','【看点数据】','【财经新闻】','【资金流向】','【早知道】') DEFAULT NULL,
   `title` text,
   `link` varchar(256) NOT NULL,
   `content` longtext,
-  `datetime` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `link` (`link`),
-  KEY `type` (`type`),
-  KEY `datetime` (`datetime`)
-) ENGINE=InnoDB AUTO_INCREMENT=16933 DEFAULT CHARSET=utf8;
+  `datetime` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `notice` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `notice`;
+--
+-- 表的结构 `notice`
+--
 
 CREATE TABLE `notice` (
   `date` date NOT NULL,
@@ -799,21 +986,40 @@ CREATE TABLE `notice` (
   `name` varchar(32) DEFAULT NULL,
   `security_type` enum('A股','B股','H股','债券','非H股') DEFAULT NULL,
   `market` enum('上交所主板','上交所风险警示板','上海证券交易所','中国银行间市场','深交所中小板','深交所主板','深交所创业板','深交所风险警示板','深圳证券交易所','香港交易所主板') DEFAULT NULL,
-  `type` varchar(63) DEFAULT NULL,
-  PRIMARY KEY (`date`,`infocode`),
-  KEY `type` (`type`),
-  KEY `eutime` (`eutime`)
+  `type` varchar(63) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`date`))
-(PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
- PARTITION p18 VALUES LESS THAN (2019) ENGINE = InnoDB,
- PARTITION p19 VALUES LESS THAN (2020) ENGINE = InnoDB,
- PARTITION p20 VALUES LESS THAN (2021) ENGINE = InnoDB) */;
+PARTITION BY RANGE (YEAR(`date`))
+(
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `refinance` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `refinance`;
+--
+-- 表的结构 `realtimecal`
+--
+
+CREATE TABLE `realtimecal` (
+  `id` int(11) NOT NULL,
+  `datetime` datetime DEFAULT NULL,
+  `taresult` longtext,
+  `finalresult` longtext
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `refinance`
+--
 
 CREATE TABLE `refinance` (
   `股票代码` varchar(20) DEFAULT NULL,
@@ -834,9 +1040,11 @@ CREATE TABLE `refinance` (
   `证监会核准发行起始日` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `shareholder` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `shareholder`;
+--
+-- 表的结构 `shareholder`
+--
 
 CREATE TABLE `shareholder` (
   `code` varchar(12) NOT NULL,
@@ -846,19 +1054,56 @@ CREATE TABLE `shareholder` (
   `quantity` double DEFAULT NULL,
   `percentage` double DEFAULT NULL,
   `change` double DEFAULT NULL,
-  `type` enum('其他未流通股','其它未流通股','国家股','境内法人股','境外法人股','流通A股','流通A股,流通B股','流通A股,流通B股,限售流通A股,流通B股','流通A股,流通H股','流通A股,流通H股,限售流通A股,流通H股','流通A股,流通S股','流通A股,限售流通A股','流通B股','流通B股,流通H股','流通B股,限售流通B股','流通H股','流通H股,限售流通H股','流通S股','限售国家股','限售境内法人股','限售境外法人股','限售流通A股','限售流通H股') DEFAULT NULL,
-  PRIMARY KEY (`code`,`date`,`name`)
+  `type` enum('其他未流通股','其它未流通股','国家股','境内法人股','境外法人股','流通A股','流通A股,流通B股','流通A股,流通B股,限售流通A股,流通B股','流通A股,流通H股','流通A股,流通H股,限售流通A股,流通H股','流通A股,流通S股','流通A股,限售流通A股','流通B股','流通B股,流通H股','流通B股,限售流通B股','流通H股','流通H股,限售流通H股','流通S股','限售国家股','限售境内法人股','限售境外法人股','限售流通A股','限售流通H股') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`date`))
-(PARTITION p14 VALUES LESS THAN (2015) ENGINE = InnoDB,
- PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
- PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
- PARTITION p0000 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
+PARTITION BY RANGE (YEAR(`date`))
+(
+PARTITION p14 VALUES LESS THAN (2015)ENGINE=InnoDB,
+PARTITION p15 VALUES LESS THAN (2016)ENGINE=InnoDB,
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `spo_done` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `spo_done`;
+--
+-- 表的结构 `shareholdernumber`
+--
+
+CREATE TABLE `shareholdernumber` (
+  `code` varchar(63) NOT NULL,
+  `date` date NOT NULL,
+  `close` float DEFAULT NULL,
+  `scr` enum('NULL','较分散','较集中','非常分散','非常集中') DEFAULT NULL,
+  `top10` float DEFAULT NULL,
+  `cirtop10` float DEFAULT NULL,
+  `shareholders` int(16) DEFAULT NULL,
+  `shschange` float DEFAULT NULL,
+  `avgamount` int(16) DEFAULT NULL,
+  `avgcirquantity` float DEFAULT NULL,
+  `avgcirchange` float DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+PARTITION BY RANGE (year(`date`))
+(
+PARTITION p15 VALUES LESS THAN (2016)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB,
+PARTITION P30 VALUES LESS THAN (2031)ENGINE=InnoDB
+);
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `spo_done`
+--
 
 CREATE TABLE `spo_done` (
   `code` varchar(12) NOT NULL,
@@ -871,13 +1116,14 @@ CREATE TABLE `spo_done` (
   `增发代码` char(12) DEFAULT NULL,
   `网上发行` varchar(63) DEFAULT NULL,
   `中签号公布日` varchar(12) DEFAULT NULL,
-  `中签率` float DEFAULT NULL,
-  PRIMARY KEY (`code`,`name`,`发行总数`,`发行日期`)
+  `中签率` float DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `statistics` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `statistics`;
+--
+-- 表的结构 `statistics`
+--
 
 CREATE TABLE `statistics` (
   `date` date NOT NULL,
@@ -885,50 +1131,90 @@ CREATE TABLE `statistics` (
   `halt` int(5) NOT NULL,
   `total` int(5) NOT NULL,
   `delisted` int(5) NOT NULL,
-  `all_listed` int(5) NOT NULL,
-  PRIMARY KEY (`date`)
+  `all_listed` int(5) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `stocklist` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `stocklist`;
+--
+-- 表的结构 `stocklist`
+--
 
 CREATE TABLE `stocklist` (
   `证券代码` varchar(30) NOT NULL,
   `证券简称` longtext NOT NULL,
   `上市市场` enum('上海证券交易所','深圳证券交易所') NOT NULL,
   `交易状态` enum('0','1','9','-1') NOT NULL DEFAULT '1',
-  `拼音缩写` varchar(8) NOT NULL,
-  PRIMARY KEY (`证券代码`)
+  `拼音缩写` varchar(8) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `tmp` */
+--
+-- 触发器 `stocklist`
+--
+DELIMITER $$
+CREATE TRIGGER `after_insert_on_stocklist` AFTER INSERT ON `stocklist` FOR EACH ROW INSERT
+INTO
+  `basedata`(`证券代码`,
+  `证券简称`)
+VALUES(NEW.`证券代码`, NEW.`证券简称`)
+$$
+DELIMITER ;
 
-DROP TABLE IF EXISTS `tmp`;
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `tmp`
+--
 
 CREATE TABLE `tmp` (
   `code` varchar(63) NOT NULL,
   `date` date NOT NULL,
-  `percentage` float NOT NULL,
-  PRIMARY KEY (`code`,`date`)
+  `percentage` float NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*Table structure for table `unusual` */
+--
+-- 触发器 `tmp`
+--
+DELIMITER $$
+CREATE TRIGGER `precentage_sync` AFTER INSERT ON `tmp` FOR EACH ROW UPDATE `usefuldata`
+SET
+`usefuldata`.`precentage` = New.`percentage`
+WHERE
+`usefuldata`.`code`=NEW.`code` and `usefuldata`.`date`=NEW.`date`
+$$
+DELIMITER ;
 
-DROP TABLE IF EXISTS `unusual`;
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `unusual`
+--
 
 CREATE TABLE `unusual` (
   `datetime` datetime NOT NULL,
   `code` char(6) NOT NULL,
   `type` enum('60日新低','60日新高','低开5日','向上缺口','向下缺口','大幅上涨','大幅下跌','大笔买入','大笔卖出','封涨停板','封跌停板','快速下跌','快速反弹','打开涨停','打开跌停','有大买盘','有大卖盘','火箭发射','竞价上涨','竞价下跌','高台跳水','高开5日') NOT NULL,
   `data` varchar(63) DEFAULT NULL,
-  `goodorbad` int(1) DEFAULT NULL,
-  PRIMARY KEY (`datetime`,`code`,`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `goodorbad` int(1) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+PARTITION BY RANGE (year(datetime))
+(
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION P19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `usefuldata` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `usefuldata`;
+--
+-- 表的结构 `usefuldata`
+--
 
 CREATE TABLE `usefuldata` (
   `code` varchar(30) NOT NULL,
@@ -937,168 +1223,451 @@ CREATE TABLE `usefuldata` (
   `araise` int(11) DEFAULT NULL,
   `percentage` float DEFAULT NULL,
   `focus` varchar(256) NOT NULL DEFAULT '',
-  `taresult` varchar(30) DEFAULT '0',
-  PRIMARY KEY (`code`,`date`),
-  KEY `taresult` (`taresult`),
-  KEY `precentage` (`percentage`),
-  KEY `amorank` (`amorank`,`araise`,`focus`),
-  KEY `date` (`date`),
-  KEY `code` (`code`)
+  `taresult` enum('0','1','1,2','2','3','1,3','2,3','1,2,3') DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`date`))
-(PARTITION p92 VALUES LESS THAN (1993) ENGINE = InnoDB,
- PARTITION p93 VALUES LESS THAN (1994) ENGINE = InnoDB,
- PARTITION p94 VALUES LESS THAN (1995) ENGINE = InnoDB,
- PARTITION p95 VALUES LESS THAN (1996) ENGINE = InnoDB,
- PARTITION p96 VALUES LESS THAN (1997) ENGINE = InnoDB,
- PARTITION p97 VALUES LESS THAN (1998) ENGINE = InnoDB,
- PARTITION p98 VALUES LESS THAN (1999) ENGINE = InnoDB,
- PARTITION p99 VALUES LESS THAN (2000) ENGINE = InnoDB,
- PARTITION p00 VALUES LESS THAN (2001) ENGINE = InnoDB,
- PARTITION p01 VALUES LESS THAN (2002) ENGINE = InnoDB,
- PARTITION p02 VALUES LESS THAN (2003) ENGINE = InnoDB,
- PARTITION p03 VALUES LESS THAN (2004) ENGINE = InnoDB,
- PARTITION p04 VALUES LESS THAN (2005) ENGINE = InnoDB,
- PARTITION p05 VALUES LESS THAN (2006) ENGINE = InnoDB,
- PARTITION p06 VALUES LESS THAN (2007) ENGINE = InnoDB,
- PARTITION p07 VALUES LESS THAN (2008) ENGINE = InnoDB,
- PARTITION p08 VALUES LESS THAN (2009) ENGINE = InnoDB,
- PARTITION p09 VALUES LESS THAN (2010) ENGINE = InnoDB,
- PARTITION p10 VALUES LESS THAN (2011) ENGINE = InnoDB,
- PARTITION p11 VALUES LESS THAN (2012) ENGINE = InnoDB,
- PARTITION p12 VALUES LESS THAN (2013) ENGINE = InnoDB,
- PARTITION p13 VALUES LESS THAN (2014) ENGINE = InnoDB,
- PARTITION p14 VALUES LESS THAN (2015) ENGINE = InnoDB,
- PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
- PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
- PARTITION p18 VALUES LESS THAN (2019) ENGINE = InnoDB,
- PARTITION p19 VALUES LESS THAN (2020) ENGINE = InnoDB) */;
+PARTITION BY RANGE (YEAR(`date`))
+(
+PARTITION p92 VALUES LESS THAN (1993)ENGINE=InnoDB,
+PARTITION p93 VALUES LESS THAN (1994)ENGINE=InnoDB,
+PARTITION p94 VALUES LESS THAN (1995)ENGINE=InnoDB,
+PARTITION p95 VALUES LESS THAN (1996)ENGINE=InnoDB,
+PARTITION p96 VALUES LESS THAN (1997)ENGINE=InnoDB,
+PARTITION p97 VALUES LESS THAN (1998)ENGINE=InnoDB,
+PARTITION p98 VALUES LESS THAN (1999)ENGINE=InnoDB,
+PARTITION p99 VALUES LESS THAN (2000)ENGINE=InnoDB,
+PARTITION p00 VALUES LESS THAN (2001)ENGINE=InnoDB,
+PARTITION p01 VALUES LESS THAN (2002)ENGINE=InnoDB,
+PARTITION p02 VALUES LESS THAN (2003)ENGINE=InnoDB,
+PARTITION p03 VALUES LESS THAN (2004)ENGINE=InnoDB,
+PARTITION p04 VALUES LESS THAN (2005)ENGINE=InnoDB,
+PARTITION p05 VALUES LESS THAN (2006)ENGINE=InnoDB,
+PARTITION p06 VALUES LESS THAN (2007)ENGINE=InnoDB,
+PARTITION p07 VALUES LESS THAN (2008)ENGINE=InnoDB,
+PARTITION p08 VALUES LESS THAN (2009)ENGINE=InnoDB,
+PARTITION p09 VALUES LESS THAN (2010)ENGINE=InnoDB,
+PARTITION p10 VALUES LESS THAN (2011)ENGINE=InnoDB,
+PARTITION p11 VALUES LESS THAN (2012)ENGINE=InnoDB,
+PARTITION p12 VALUES LESS THAN (2013)ENGINE=InnoDB,
+PARTITION p13 VALUES LESS THAN (2014)ENGINE=InnoDB,
+PARTITION p14 VALUES LESS THAN (2015)ENGINE=InnoDB,
+PARTITION p15 VALUES LESS THAN (2016)ENGINE=InnoDB,
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION p19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*Table structure for table `usefuldata00` */
+-- --------------------------------------------------------
 
-DROP TABLE IF EXISTS `usefuldata00`;
-
-CREATE TABLE `usefuldata00` (
-  `code` varchar(30) NOT NULL,
-  `date` date NOT NULL DEFAULT '1990-01-01',
-  `AmoRank` int(11) DEFAULT NULL,
-  `ARaise` int(11) DEFAULT NULL,
-  `precentage` float DEFAULT NULL,
-  `涨跌动因` varchar(256) NOT NULL DEFAULT '',
-  `taresult` varchar(30) DEFAULT '0',
-  PRIMARY KEY (`code`,`date`),
-  KEY `date` (`date`),
-  KEY `ARaise` (`ARaise`),
-  KEY `taresult` (`taresult`),
-  KEY `AmoRank` (`AmoRank`),
-  KEY `precentage` (`precentage`),
-  KEY `涨跌动因` (`涨跌动因`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8
-/*!50100 PARTITION BY RANGE (YEAR(`date`))
-(PARTITION p92 VALUES LESS THAN (1993) ENGINE = InnoDB,
- PARTITION p93 VALUES LESS THAN (1994) ENGINE = InnoDB,
- PARTITION p94 VALUES LESS THAN (1995) ENGINE = InnoDB,
- PARTITION p95 VALUES LESS THAN (1996) ENGINE = InnoDB,
- PARTITION p96 VALUES LESS THAN (1997) ENGINE = InnoDB,
- PARTITION p97 VALUES LESS THAN (1998) ENGINE = InnoDB,
- PARTITION p98 VALUES LESS THAN (1999) ENGINE = InnoDB,
- PARTITION p99 VALUES LESS THAN (2000) ENGINE = InnoDB,
- PARTITION p00 VALUES LESS THAN (2001) ENGINE = InnoDB,
- PARTITION p01 VALUES LESS THAN (2002) ENGINE = InnoDB,
- PARTITION p02 VALUES LESS THAN (2003) ENGINE = InnoDB,
- PARTITION p03 VALUES LESS THAN (2004) ENGINE = InnoDB,
- PARTITION p04 VALUES LESS THAN (2005) ENGINE = InnoDB,
- PARTITION p05 VALUES LESS THAN (2006) ENGINE = InnoDB,
- PARTITION p06 VALUES LESS THAN (2007) ENGINE = InnoDB,
- PARTITION p07 VALUES LESS THAN (2008) ENGINE = InnoDB,
- PARTITION p08 VALUES LESS THAN (2009) ENGINE = InnoDB,
- PARTITION p09 VALUES LESS THAN (2010) ENGINE = InnoDB,
- PARTITION p10 VALUES LESS THAN (2011) ENGINE = InnoDB,
- PARTITION p11 VALUES LESS THAN (2012) ENGINE = InnoDB,
- PARTITION p12 VALUES LESS THAN (2013) ENGINE = InnoDB,
- PARTITION p13 VALUES LESS THAN (2014) ENGINE = InnoDB,
- PARTITION p14 VALUES LESS THAN (2015) ENGINE = InnoDB,
- PARTITION p15 VALUES LESS THAN (2016) ENGINE = InnoDB,
- PARTITION p16 VALUES LESS THAN (2017) ENGINE = InnoDB,
- PARTITION p17 VALUES LESS THAN (2018) ENGINE = InnoDB,
- PARTITION p18 VALUES LESS THAN (2019) ENGINE = InnoDB,
- PARTITION p19 VALUES LESS THAN (2020) ENGINE = InnoDB) */;
-
-/*Table structure for table `user` */
-
-DROP TABLE IF EXISTS `user`;
+--
+-- 表的结构 `user`
+--
 
 CREATE TABLE `user` (
-  `user_id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
   `user_login_id` varchar(32) NOT NULL,
   `user_password` varchar(512) NOT NULL,
   `user_name` varchar(32) NOT NULL,
   `user_email` text NOT NULL,
   `user_mobile` varchar(11) NOT NULL,
-  `user_group` varchar(15) NOT NULL,
-  PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+  `user_group` enum('admin','vip','high-end','paid','free') NOT NULL DEFAULT 'free',
+  `user_expiration_date` date DEFAULT '2050-12-31'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/* Trigger structure for table `dayline_tmp` */
+-- --------------------------------------------------------
 
-DELIMITER $$
+--
+-- 表的结构 `user_invitation`
+--
 
-/*!50003 DROP TRIGGER*//*!50032 IF EXISTS */ /*!50003 `update_adjfactor_sync` */$$
+CREATE TABLE `user_invitation` (
+  `id` int(11) NOT NULL,
+  `code` varchar(16) NOT NULL,
+  `user_check` varchar(256) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-/*!50003 CREATE */ /*!50017 DEFINER = 'root'@'%' */ /*!50003 TRIGGER `update_adjfactor_sync` AFTER INSERT ON `dayline_tmp` FOR EACH ROW UPDATE `dayline`
-SET 
-`dayline`.`adjfactor`=NEW.`adjfactor`,
-`dayline`.`adjcump`=NEW.`adjcump`
-WHERE
-`dayline`.`code`=NEW.`code` AND
-`dayline`.`date`=NEW.`date` */$$
+-- --------------------------------------------------------
 
+--
+-- 表的结构 `zdt`
+--
 
-DELIMITER ;
+CREATE TABLE `zdt` (
+  `code` varchar(63) NOT NULL,
+  `name` varchar(63) DEFAULT NULL,
+  `close` double DEFAULT NULL,
+  `percentage` double DEFAULT NULL,
+  `fcb` double DEFAULT NULL,
+  `flb` double DEFAULT NULL,
+  `fdmoney` double DEFAULT NULL,
+  `lasttime` datetime DEFAULT NULL,
+  `firsttime` datetime NOT NULL,
+  `opentimes` bigint(20) DEFAULT NULL,
+  `amplitude` double DEFAULT NULL,
+  `force` double DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+PARTITION BY RANGE (year(`firsttime`))
+(
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION P19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/* Trigger structure for table `stocklist` */
+-- --------------------------------------------------------
 
-DELIMITER $$
+--
+-- 表的结构 `zrzdt`
+--
 
-/*!50003 DROP TRIGGER*//*!50032 IF EXISTS */ /*!50003 `after_insert_on_stocklist` */$$
+CREATE TABLE `zrzdt` (
+  `code` varchar(63) NOT NULL,
+  `name` varchar(63) DEFAULT NULL,
+  `time` datetime NOT NULL,
+  `close` double DEFAULT NULL,
+  `percentage` double DEFAULT NULL,
+  `amo` double DEFAULT NULL,
+  `amplitude` double DEFAULT NULL,
+  `turnoverate` double DEFAULT NULL,
+  `pe` double DEFAULT NULL,
+  `concept` varchar(256) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+PARTITION BY RANGE (year(`time`))
+(
+PARTITION p16 VALUES LESS THAN (2017)ENGINE=InnoDB,
+PARTITION p17 VALUES LESS THAN (2018)ENGINE=InnoDB,
+PARTITION p18 VALUES LESS THAN (2019)ENGINE=InnoDB,
+PARTITION P19 VALUES LESS THAN (2020)ENGINE=InnoDB,
+PARTITION p20 VALUES LESS THAN (2021)ENGINE=InnoDB,
+PARTITION p21 VALUES LESS THAN (2022)ENGINE=InnoDB,
+PARTITION p22 VALUES LESS THAN (2023)ENGINE=InnoDB,
+PARTITION p23 VALUES LESS THAN (2024)ENGINE=InnoDB,
+PARTITION p24 VALUES LESS THAN (2025)ENGINE=InnoDB,
+PARTITION p25 VALUES LESS THAN (2026)ENGINE=InnoDB
+);
 
-/*!50003 CREATE */ /*!50017 DEFINER = 'root'@'%' */ /*!50003 TRIGGER `after_insert_on_stocklist` AFTER INSERT ON `stocklist` FOR EACH ROW INSERT
-INTO
-  `basedata`(`证券代码`,
-  `证券简称`)
-VALUES(NEW.`证券代码`, NEW.`证券简称`) */$$
+--
+-- Indexes for dumped tables
+--
 
+--
+-- Indexes for table `5min`
+--
+ALTER TABLE `5min`
+  ADD PRIMARY KEY (`code`,`datetime`);
 
-DELIMITER ;
+--
+-- Indexes for table `basedata`
+--
+ALTER TABLE `basedata`
+  ADD PRIMARY KEY (`证券代码`),
+  ADD KEY `证券简称` (`证券简称`);
 
-/* Trigger structure for table `stocklist` */
+--
+-- Indexes for table `blocktrade`
+--
+ALTER TABLE `blocktrade`
+  ADD PRIMARY KEY (`id`,`code`,`交易日期`),
+  ADD KEY `cdoe` (`code`,`买方营业部`,`卖方营业部`),
+  ADD KEY `类型` (`类型`);
 
-DELIMITER $$
+--
+-- Indexes for table `blog`
+--
+ALTER TABLE `blog`
+  ADD PRIMARY KEY (`id`);
 
-/*!50003 DROP TRIGGER*//*!50032 IF EXISTS */ /*!50003 `after_update_on_stocklist` */$$
+--
+-- Indexes for table `buyback`
+--
+ALTER TABLE `buyback`
+  ADD PRIMARY KEY (`证劵代码`,`方案进度`,`董事会通过日`,`股份种类`);
 
-/*!50003 CREATE */ /*!50017 DEFINER = 'root'@'%' */ /*!50003 TRIGGER `after_update_on_stocklist` AFTER UPDATE ON `stocklist` FOR EACH ROW UPDATE `basedata` SET `证券简称`=NEW.`证券简称` WHERE `basedata`.`证券代码`=NEW.`证券代码` */$$
+--
+-- Indexes for table `capitalchange`
+--
+ALTER TABLE `capitalchange`
+  ADD PRIMARY KEY (`﻿股票代码`,`变动日期`),
+  ADD KEY `变动日期` (`变动日期`);
 
+--
+-- Indexes for table `cirholder`
+--
+ALTER TABLE `cirholder`
+  ADD PRIMARY KEY (`code`,`date`,`name`);
 
-DELIMITER ;
+--
+-- Indexes for table `dayline`
+--
+ALTER TABLE `dayline`
+  ADD PRIMARY KEY (`code`,`date`),
+  ADD KEY `date` (`date`),
+  ADD KEY `code` (`code`);
 
-/* Trigger structure for table `tmp` */
+--
+-- Indexes for table `dayline_tmp`
+--
+ALTER TABLE `dayline_tmp`
+  ADD PRIMARY KEY (`code`,`date`),
+  ADD KEY `date` (`date`);
 
-DELIMITER $$
+--
+-- Indexes for table `favorite`
+--
+ALTER TABLE `favorite`
+  ADD PRIMARY KEY (`favorite_id`);
 
-/*!50003 DROP TRIGGER*//*!50032 IF EXISTS */ /*!50003 `precentage_sync` */$$
+--
+-- Indexes for table `financial`
+--
+ALTER TABLE `financial`
+  ADD PRIMARY KEY (`报表日期`,`代码`),
+  ADD KEY `代码` (`代码`);
 
-/*!50003 CREATE */ /*!50017 DEFINER = 'root'@'%' */ /*!50003 TRIGGER `precentage_sync` AFTER INSERT ON `tmp` FOR EACH ROW UPDATE `usefuldata`
-SET
-`usefuldata`.`precentage` = New.`percentage`
-WHERE
-`usefuldata`.`code`=NEW.`code` and `usefuldata`.`date`=NEW.`date` */$$
+--
+-- Indexes for table `financial_rank`
+--
+ALTER TABLE `financial_rank`
+  ADD PRIMARY KEY (`代码`,`报表日期`);
 
+--
+-- Indexes for table `forecast`
+--
+ALTER TABLE `forecast`
+  ADD PRIMARY KEY (`code`,`date`,`财报日期`),
+  ADD KEY `下限` (`下限`),
+  ADD KEY `上限` (`上限`),
+  ADD KEY `预告类型` (`预告类型`);
 
-DELIMITER ;
+--
+-- Indexes for table `ftsplit`
+--
+ALTER TABLE `ftsplit`
+  ADD PRIMARY KEY (`code`,`date`),
+  ADD KEY `date` (`date`);
 
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+--
+-- Indexes for table `incentive`
+--
+ALTER TABLE `incentive`
+  ADD PRIMARY KEY (`股票代码`,`激励标的物`,`薪酬委员会预案公告日`),
+  ADD KEY `本期计划制定年度` (`本期计划制定年度`),
+  ADD KEY `方案进度` (`方案进度`);
+
+--
+-- Indexes for table `indexdb`
+--
+ALTER TABLE `indexdb`
+  ADD PRIMARY KEY (`code`,`date`),
+  ADD KEY `date` (`date`);
+
+--
+-- Indexes for table `indexlist`
+--
+ALTER TABLE `indexlist`
+  ADD PRIMARY KEY (`code`);
+
+--
+-- Indexes for table `indicator`
+--
+ALTER TABLE `indicator`
+  ADD UNIQUE KEY `short` (`short`);
+
+--
+-- Indexes for table `institutional`
+--
+ALTER TABLE `institutional`
+  ADD PRIMARY KEY (`code`,`fundcode`,`date`);
+
+--
+-- Indexes for table `lhb`
+--
+ALTER TABLE `lhb`
+  ADD PRIMARY KEY (`index`,`date`,`code`,`上榜原因`),
+  ADD KEY `营业部名称` (`营业部名称`);
+
+--
+-- Indexes for table `lhb_base`
+--
+ALTER TABLE `lhb_base`
+  ADD PRIMARY KEY (`营业部代码`);
+
+--
+-- Indexes for table `mainbusiness`
+--
+ALTER TABLE `mainbusiness`
+  ADD PRIMARY KEY (`code`,`报表日期`,`主营构成`,`分类`);
+
+--
+-- Indexes for table `managerial`
+--
+ALTER TABLE `managerial`
+  ADD PRIMARY KEY (`code`,`日期`,`变动人`,`持股种类`,`变动股数`,`变动后持股数`,`成交均价`,`变动人与董监高的关系`,`变动方式`,`变动金额`,`职务`,`变动比例`,`董监高人员姓名`);
+
+--
+-- Indexes for table `news`
+--
+ALTER TABLE `news`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `link` (`link`),
+  ADD KEY `type` (`type`),
+  ADD KEY `datetime` (`datetime`);
+
+--
+-- Indexes for table `notice`
+--
+ALTER TABLE `notice`
+  ADD PRIMARY KEY (`date`,`infocode`),
+  ADD KEY `type` (`type`),
+  ADD KEY `eutime` (`eutime`);
+
+--
+-- Indexes for table `realtimecal`
+--
+ALTER TABLE `realtimecal`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `datetime` (`datetime`),
+  ADD KEY `id` (`id`);
+
+--
+-- Indexes for table `shareholder`
+--
+ALTER TABLE `shareholder`
+  ADD PRIMARY KEY (`code`,`date`,`name`);
+
+--
+-- Indexes for table `shareholdernumber`
+--
+ALTER TABLE `shareholdernumber`
+  ADD PRIMARY KEY (`code`,`date`);
+
+--
+-- Indexes for table `spo_done`
+--
+ALTER TABLE `spo_done`
+  ADD PRIMARY KEY (`code`,`name`,`发行总数`,`发行日期`);
+
+--
+-- Indexes for table `statistics`
+--
+ALTER TABLE `statistics`
+  ADD PRIMARY KEY (`date`);
+
+--
+-- Indexes for table `stocklist`
+--
+ALTER TABLE `stocklist`
+  ADD PRIMARY KEY (`证券代码`);
+
+--
+-- Indexes for table `tmp`
+--
+ALTER TABLE `tmp`
+  ADD PRIMARY KEY (`code`,`date`);
+
+--
+-- Indexes for table `unusual`
+--
+ALTER TABLE `unusual`
+  ADD PRIMARY KEY (`datetime`,`code`,`type`);
+
+--
+-- Indexes for table `usefuldata`
+--
+ALTER TABLE `usefuldata`
+  ADD PRIMARY KEY (`code`,`date`),
+  ADD KEY `taresult` (`taresult`),
+  ADD KEY `precentage` (`percentage`),
+  ADD KEY `amorank` (`amorank`,`araise`,`focus`),
+  ADD KEY `date` (`date`),
+  ADD KEY `code` (`code`);
+
+--
+-- Indexes for table `user`
+--
+ALTER TABLE `user`
+  ADD PRIMARY KEY (`user_id`);
+
+--
+-- Indexes for table `user_invitation`
+--
+ALTER TABLE `user_invitation`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `user_check` (`user_check`);
+
+--
+-- Indexes for table `zdt`
+--
+ALTER TABLE `zdt`
+  ADD PRIMARY KEY (`code`,`firsttime`);
+
+--
+-- Indexes for table `zrzdt`
+--
+ALTER TABLE `zrzdt`
+  ADD PRIMARY KEY (`code`,`time`);
+
+--
+-- 在导出的表使用AUTO_INCREMENT
+--
+
+--
+-- 使用表AUTO_INCREMENT `blocktrade`
+--
+ALTER TABLE `blocktrade`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=188154;
+--
+-- 使用表AUTO_INCREMENT `blog`
+--
+ALTER TABLE `blog`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+--
+-- 使用表AUTO_INCREMENT `favorite`
+--
+ALTER TABLE `favorite`
+  MODIFY `favorite_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=598;
+--
+-- 使用表AUTO_INCREMENT `news`
+--
+ALTER TABLE `news`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=41999;
+--
+-- 使用表AUTO_INCREMENT `realtimecal`
+--
+ALTER TABLE `realtimecal`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=614;
+--
+-- 使用表AUTO_INCREMENT `user`
+--
+ALTER TABLE `user`
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+--
+-- 使用表AUTO_INCREMENT `user_invitation`
+--
+ALTER TABLE `user_invitation`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=101;
+--
+-- 限制导出的表
+--
+
+--
+-- 限制表 `basedata`
+--
+ALTER TABLE `basedata`
+  ADD CONSTRAINT `basedata_ibfk_1` FOREIGN KEY (`证券代码`) REFERENCES `stocklist` (`证券代码`);
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
